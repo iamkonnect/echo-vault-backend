@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Music - EchoVault Artist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/pub/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .card { background-color: #1a1a1a; border: 1px solid #333; transition: all 0.3s ease; }
+        .card:hover { border-color: #a855f7; transform: translateY(-2px); }
+        .btn-purple { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col">
+        <div class="p-6 text-2xl font-bold text-purple-500">EchoVault</div>
+        <nav class="flex-1 px-4 space-y-2">
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
+                <i class="fas fa-home mr-3 w-5"></i> Dashboard
+            </a>
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-white bg-purple-500/10 border-l-4 border-purple-500 rounded-r-lg">
+                <i class="fas fa-music mr-3 w-5 text-purple-500"></i> My Music
+            </a>
+            <a href="/api/artist/shorts-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
+                <i class="fas fa-chart-line mr-3 w-5"></i> Shorts Insights
+            </a>
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
+                <i class="fas fa-wallet mr-3 w-5"></i> Revenue
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-800">
+            <form action="/api/auth/logout" method="POST">
+                <button type="submit" class="w-full text-left p-3 text-red-400 hover:text-red-300 transition">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">My Music Library</h1>
+            <div class="relative group">
+                <button class="btn-purple px-6 py-2 rounded-full font-semibold hover:opacity-90 flex items-center">
+                    <i class="fas fa-upload mr-2"></i> Upload Content
+                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+                <!-- Dropdown Menu -->
+                <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-gray-800 rounded-xl shadow-xl hidden group-hover:block z-50 overflow-hidden">
+                    <a href="/api/artist/upload/audio" class="block px-4 py-3 text-sm text-gray-300 hover:bg-purple-500/10 hover:text-white transition">
+                        <i class="fas fa-microphone-alt mr-2 text-purple-400"></i> Audio Track
+                    </a>
+                    <a href="/api/artist/upload/video" class="block px-4 py-3 text-sm text-gray-300 hover:bg-purple-500/10 hover:text-white transition">
+                        <i class="fas fa-video mr-2 text-blue-400"></i> Music Video
+                    </a>
+                    <a href="/api/artist/upload/shorts" class="block px-4 py-3 text-sm text-gray-300 hover:bg-purple-500/10 hover:text-white transition">
+                        <i class="fas fa-bolt mr-2 text-yellow-400"></i> Short Clip
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Songs Section -->
+        <div class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-music mr-2 text-purple-400"></i> Tracks
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <% if (songs && songs.length > 0) { %>
+                    <% songs.forEach(song => { %>
+                        <div class="card p-4 rounded-xl flex items-center space-x-4">
+                            <div class="w-16 h-16 bg-purple-900/30 rounded-lg flex items-center justify-center text-purple-400">
+                                <i class="fas fa-play text-xl"></i>
+                            </div>
+                            <div class="flex-1 overflow-hidden">
+                                <h3 class="font-semibold truncate"><%= song.title %></h3>
+                                <p class="text-sm text-gray-400"><%= song.playCount %> plays</p>
+                            </div>
+                            <button class="text-gray-500 hover:text-white"><i class="fas fa-ellipsis-v"></i></button>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-span-full py-12 text-center text-gray-500 border-2 border-dashed border-gray-800 rounded-xl">
+                        No tracks uploaded yet. Start your journey!
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Videos Section -->
+        <div>
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-video mr-2 text-purple-400"></i> Videos & Shorts
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <% if (videos && videos.length > 0) { %>
+                    <% videos.forEach(video => { %>
+                        <div class="card rounded-xl overflow-hidden group relative">
+                            <div class="aspect-[9/16] bg-gray-800 flex items-center justify-center">
+                                <i class="fas fa-film text-3xl text-gray-700"></i>
+                            </div>
+                            <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                                <p class="text-xs font-medium truncate"><%= video.title %></p>
+                                <p class="text-[10px] text-gray-400"><%= video.playCount %> views</p>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-span-full py-8 text-center text-gray-500">No videos found.</div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

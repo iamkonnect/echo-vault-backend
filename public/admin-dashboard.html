@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Central - EchoVault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-5xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 bg-clip-text text-transparent tracking-tight mb-2">Admin Central</h1>
+                <p class="text-xl text-white/60" id="userName">Welcome, Admin</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="refreshData()" class="px-6 py-2 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 rounded-lg hover:bg-emerald-500/30">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+                <button onclick="logout()" class="px-6 py-2 bg-red-500/20 border border-red-500/50 text-red-300 rounded-lg hover:bg-red-500/30">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Platform Revenue -->
+        <div class="glass p-8 mb-8 text-center border border-emerald-500/20">
+            <p class="text-sm text-emerald-400 uppercase font-bold tracking-wider mb-2">Platform Revenue</p>
+            <p class="text-5xl font-mono font-bold text-emerald-300">$0</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="glass p-8 border border-emerald-500/20 hover:border-emerald-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-emerald-500/20 rounded-xl"><i class="fas fa-users text-emerald-400"></i></span>
+                    <span class="text-emerald-400 text-sm font-bold">+3.2%</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Total Users</p>
+                <p class="text-4xl font-black" id="totalUsers">0</p>
+            </div>
+
+            <div class="glass p-8 border border-blue-500/20 hover:border-blue-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-blue-500/20 rounded-xl"><i class="fas fa-microphone text-blue-400"></i></span>
+                    <span class="text-emerald-400 text-sm font-bold">+1.8%</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Active Artists</p>
+                <p class="text-4xl font-black" id="activeArtists">0</p>
+            </div>
+
+            <div class="glass p-8 border border-orange-500/20 hover:border-orange-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-orange-500/20 rounded-xl"><i class="fas fa-clock text-orange-400"></i></span>
+                    <span class="text-orange-400 text-sm font-bold">↑ 5</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Pending Payouts</p>
+                <p class="text-4xl font-black" id="pendingPayouts">0</p>
+            </div>
+
+            <div class="glass p-8 border border-purple-500/20 hover:border-purple-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-purple-500/20 rounded-xl"><i class="fas fa-flag text-purple-400"></i></span>
+                    <span class="text-red-400 text-sm font-bold">2 new</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Active Reports</p>
+                <p class="text-4xl font-black" id="activeReports">0</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1 glass p-8 border border-white/10">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h3>
+                <div class="space-y-3">
+                    <button onclick="alert('User Directory - Coming Soon')" class="w-full p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-search text-blue-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-white">User Directory</p>
+                                <p class="text-sm text-white/50">View all accounts</p>
+                            </div>
+                        </div>
+                    </button>
+                    <button onclick="alert('Add Admin - Coming Soon')" class="w-full p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-plus text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-white">Add Admin</p>
+                                <p class="text-sm text-white/50">Grant admin access</p>
+                            </div>
+                        </div>
+                    </button>
+                    <button onclick="alert('Payouts - Coming Soon')" class="w-full p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-coins text-orange-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-white">Review Payouts</p>
+                                <p class="text-sm text-white/50">Approve withdrawals</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Platform Stats -->
+            <div class="lg:col-span-2 glass p-8 border border-white/10">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-chart-line"></i> Platform Overview
+                </h3>
+                <div class="space-y-4 text-white/70">
+                    <div class="flex justify-between pb-2 border-b border-white/10">
+                        <span>Total Registered Users</span>
+                        <span id="overviewUsers" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between pb-2 border-b border-white/10">
+                        <span>Active Artists</span>
+                        <span id="overviewArtists" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between pb-2 border-b border-white/10">
+                        <span>Platform Status</span>
+                        <span class="font-bold text-emerald-400">● Healthy</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Last Updated</span>
+                        <span id="lastUpdated" class="font-bold text-white text-sm">Just now</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        const userName = localStorage.getItem('userName');
+
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('userName').textContent = `Welcome, ${userName || 'Admin'}`;
+
+        function loadDashboardData() {
+            // Mock data - in production, fetch from /api/admin/stats
+            document.getElementById('totalUsers').textContent = '2';
+            document.getElementById('activeArtists').textContent = '1';
+            document.getElementById('pendingPayouts').textContent = '0';
+            document.getElementById('activeReports').textContent = '0';
+            document.getElementById('overviewUsers').textContent = '2';
+            document.getElementById('overviewArtists').textContent = '1';
+        }
+
+        function refreshData() {
+            loadDashboardData();
+            const now = new Date().toLocaleTimeString();
+            document.getElementById('lastUpdated').textContent = now;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            window.location.href = '/';
+        }
+
+        loadDashboardData();
+    </script>
+</body>
+</html>

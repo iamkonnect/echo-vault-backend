@@ -1,0 +1,48 @@
+$kind: http-request
+name: Login Dashboard
+method: POST
+url: '{{baseUrl}}/api/auth/login-dashboard'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "artist@example.com",
+      "password": "password123"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response has success === true", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+        pm.expect(json.success).to.equal(true);
+      });
+      pm.test("Response has token", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("token");
+      });
+      const json = pm.response.json();
+      if (json && json.role === "ADMIN" && json.token) {
+        pm.environment.set("adminToken", json.token);
+        console.log("Admin token saved:", json.token);
+      }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

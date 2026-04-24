@@ -1,0 +1,48 @@
+$kind: http-request
+name: Get Earnings Breakdown
+method: GET
+url: '{{baseUrl}}/api/artist/earnings'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{artistToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response has totalEarnings as number", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("totalEarnings");
+        pm.expect(json.totalEarnings).to.be.a("number");
+      });
+      pm.test("Response has breakdown.shorts", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("breakdown");
+        pm.expect(json.breakdown).to.have.property("shorts");
+      });
+      pm.test("Response has breakdown.live", function () {
+        const json = pm.response.json();
+        pm.expect(json.breakdown).to.have.property("live");
+      });
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response is valid JSON", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an("object");
+      });
+      
+      pm.test("Response has data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("data");
+      });

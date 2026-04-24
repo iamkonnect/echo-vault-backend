@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoVault Admin - Payouts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+        .admin-sidebar { background: rgba(15,12,41,0.8); backdrop-filter: blur(10px); }
+        .metric-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; padding: 2rem; transition: all 0.3s ease; }
+        .metric-card:hover { border-color: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 shadow-2xl flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
+                </a>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+                <a href="/api/admin/payouts" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <i class="fas fa-coins w-5"></i> Payouts
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <main class="flex-1 p-12 overflow-y-auto">
+        <header class="mb-12 pb-8 border-b border-white/10">
+            <h1 class="text-5xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 bg-clip-text text-transparent tracking-tight mb-2">Payouts Management</h1>
+            <p class="text-xl text-white/60 font-light">Manage artist withdrawal requests and track revenue</p>
+        </header>
+
+        <!-- Platform Revenue Section -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-white">
+                <i class="fas fa-chart-pie text-emerald-400"></i> Platform Revenue
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <!-- Total Revenue -->
+                <div class="metric-card border-emerald-500/20 hover:border-emerald-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-emerald-500/20 rounded-xl"><i class="fas fa-coins text-emerald-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Total Revenue</p>
+                    <p class="text-3xl font-black text-emerald-300">$<%= (totalRevenue || 0).toFixed(2) %></p>
+                </div>
+                <!-- Gifts -->
+                <div class="metric-card border-purple-500/20 hover:border-purple-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-purple-500/20 rounded-xl"><i class="fas fa-gift text-purple-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Gifts</p>
+                    <p class="text-3xl font-black text-purple-300">$<%= (revenueBreakdown.gifts || 0).toFixed(2) %></p>
+                </div>
+                <!-- Music -->
+                <div class="metric-card border-blue-500/20 hover:border-blue-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-blue-500/20 rounded-xl"><i class="fas fa-music text-blue-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Music</p>
+                    <p class="text-3xl font-black text-blue-300">$<%= (revenueBreakdown.music || 0).toFixed(2) %></p>
+                </div>
+                <!-- Live -->
+                <div class="metric-card border-orange-500/20 hover:border-orange-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-orange-500/20 rounded-xl"><i class="fas fa-broadcast-tower text-orange-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Live</p>
+                    <p class="text-3xl font-black text-orange-300">$<%= (revenueBreakdown.live || 0).toFixed(2) %></p>
+                </div>
+                <!-- Ads -->
+                <div class="metric-card border-pink-500/20 hover:border-pink-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-pink-500/20 rounded-xl"><i class="fas fa-bullhorn text-pink-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Ads</p>
+                    <p class="text-3xl font-black text-pink-300">$<%= (revenueBreakdown.ads || 0).toFixed(2) %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payout Summary Cards -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-white">
+                <i class="fas fa-wallet text-blue-400"></i> Payout Summary & Management
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Total Pending -->
+                <div class="metric-card border-yellow-500/20 hover:border-yellow-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-yellow-500/20 rounded-xl"><i class="fas fa-clock text-yellow-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Pending</p>
+                    <p class="text-3xl font-black text-yellow-300">$<%= (totalPending || 0).toFixed(2) %></p>
+                </div>
+                <!-- Total Processed -->
+                <div class="metric-card border-emerald-500/20 hover:border-emerald-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-emerald-500/20 rounded-xl"><i class="fas fa-check-circle text-emerald-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Processed</p>
+                    <p class="text-3xl font-black text-emerald-300">$<%= (totalPaidOut || 0).toFixed(2) %></p>
+                </div>
+                <!-- Available Revenue -->
+                <div class="metric-card border-cyan-500/20 hover:border-cyan-400/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="p-2 bg-cyan-500/20 rounded-xl"><i class="fas fa-piggy-bank text-cyan-400 text-lg"></i></span>
+                    </div>
+                    <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Available</p>
+                    <p class="text-3xl font-black text-cyan-300">$<%= (availableRevenue || 0).toFixed(2) %></p>
+                </div>
+                <!-- Bank Withdrawal -->
+                <div class="metric-card border-purple-500/20 hover:border-purple-400/40 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="p-2 bg-purple-500/20 rounded-xl"><i class="fas fa-bank text-purple-400 text-lg"></i></span>
+                        </div>
+                        <p class="text-sm text-white/50 mb-2 uppercase tracking-wide font-medium">Bank Transfer</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="openWithdrawalModal('request')" class="w-full px-4 py-2 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 rounded-lg font-medium text-sm transition-all border border-purple-600/30">
+                            <i class="fas fa-plus mr-2"></i>Request
+                        </button>
+                        <button onclick="openWithdrawalModal('bank')" class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white rounded-lg font-medium text-sm transition-all">
+                            <i class="fas fa-arrow-right mr-2"></i>Withdraw
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Withdrawals Table -->
+        <div class="glass p-8 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-clock text-blue-400"></i> Pending Withdrawals
+                </h2>
+                <span class="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm">
+                    <%= withdrawals.length %> pending
+                </span>
+            </div>
+
+            <% if (withdrawals.length === 0) { %>
+                <div class="text-center py-12">
+                    <i class="fas fa-check-circle text-green-400 text-4xl mb-4"></i>
+                    <p class="text-white/40">No pending withdrawals</p>
+                </div>
+            <% } else { %>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-white/5 border-b border-white/10">
+                            <tr>
+                                <th class="p-4 text-white/60 font-semibold">Artist</th>
+                                <th class="p-4 text-white/60 font-semibold">Amount</th>
+                                <th class="p-4 text-white/60 font-semibold">Date</th>
+                                <th class="p-4 text-white/60 font-semibold">Status</th>
+                                <th class="p-4 text-white/60 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            <% withdrawals.forEach(w => { %>
+                            <tr class="hover:bg-white/5 transition">
+                                <td class="p-4"><%= w.user?.name || 'Unknown' %></td>
+                                <td class="p-4 text-emerald-400 font-mono">$<%= w.amount.toFixed(2) %></td>
+                                <td class="p-4 text-white/60"><%= new Date(w.createdAt).toLocaleDateString() %></td>
+                                <td class="p-4">
+                                    <span class="bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full text-sm">
+                                        <%= w.status %>
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="approvePayout('<%= w.id %>')" class="bg-emerald-500/30 hover:bg-emerald-500/40 text-emerald-300 px-3 py-1 rounded text-sm transition">
+                                            <i class="fas fa-check mr-1"></i>Approve
+                                        </button>
+                                        <button onclick="rejectPayout('<%= w.id %>')" class="bg-red-500/30 hover:bg-red-500/40 text-red-300 px-3 py-1 rounded text-sm transition">
+                                            <i class="fas fa-times mr-1"></i>Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+
+
+    </main>
+
+    <script>
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/';
+                })
+                .catch(err => {
+                    console.error('Logout error:', err);
+                    window.location.href = '/';
+                });
+        }
+
+        function openWithdrawalModal(type) {
+            const amount = type === 'bank' ? <%= availableRevenue || 0 %> : 0;
+            const promptMsg = type === 'bank' 
+                ? `Enter amount to withdraw to bank (Available: $${amount.toFixed(2)}):`
+                : 'Enter withdrawal request amount (this will be pending for approval):';
+            
+            const userAmount = prompt(promptMsg);
+            if (userAmount === null) return;
+            
+            const numAmount = parseFloat(userAmount);
+            if (isNaN(numAmount) || numAmount <= 0) {
+                alert('Invalid amount');
+                return;
+            }
+
+            if (type === 'bank' && numAmount > amount) {
+                alert(`Amount exceeds available revenue ($${amount.toFixed(2)})`);
+                return;
+            }
+
+            if (type === 'bank') {
+                withdrawToBank(numAmount);
+            } else {
+                requestWithdrawal(numAmount);
+            }
+        }
+
+        function withdrawToBank(amount) {
+            if (!confirm(`Withdraw $${amount.toFixed(2)} to bank account?`)) return;
+            
+            const btn = event?.target?.closest('button');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            }
+
+            fetch('/api/admin/withdraw-to-bank', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            })
+            .catch(e => {
+                alert('Error: ' + e.message);
+                if (btn) btn.disabled = false;
+            });
+        }
+
+        function requestWithdrawal(amount) {
+            if (!confirm(`Create withdrawal request for $${amount.toFixed(2)}?`)) return;
+            
+            fetch('/api/admin/request-withdrawal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, description: 'Platform revenue withdrawal request' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            })
+            .catch(e => alert('Error: ' + e.message));
+        }
+
+        function approvePayout(transactionId) {
+            if (confirm('Approve this payout?')) {
+                fetch(`/api/admin/payout/${transactionId}/approve`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+
+        function rejectPayout(transactionId) {
+            if (confirm('Reject this payout?')) {
+                fetch(`/api/admin/payout/${transactionId}/reject`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+$kind: http-request
+name: Verify Auth
+method: POST
+url: '{{baseUrl}}/api/auth/verify'
+order: 7000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response has success === true", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+        pm.expect(json.success).to.equal(true);
+      });
+      pm.test("Response has user.id", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("user");
+        pm.expect(json.user).to.have.property("id");
+      });
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

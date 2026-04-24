@@ -1,0 +1,18 @@
+$kind: collection
+name: EchoVault API
+description: |-
+  Complete API collection for EchoVault — a music streaming platform for artists.
+  Covers Authentication, Artist endpoints, Admin management, Analytics, Tracks, and Live Streams.
+  
+  Base URL: {{baseUrl}}
+  
+  Auth: Most endpoints require a Bearer token. Set the `token` variable after login.
+variables:
+  - key: baseUrl
+    value: 'http://localhost:5000'
+  - key: token
+    value: ''
+  - key: artistToken
+    value: ''
+  - key: adminToken
+    value: ''

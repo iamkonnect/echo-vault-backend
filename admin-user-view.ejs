@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= user.name %> - User Profile | EchoVault Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 1rem; 
+        }
+        .admin-sidebar { 
+            background: rgba(15, 12, 41, 0.8); 
+            backdrop-filter: blur(10px); 
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        
+        .profile-header {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .action-btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        
+        .action-btn-primary {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .action-btn-primary:hover {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+        
+        .action-btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .action-btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .role-admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        
+        .role-artist {
+            background: rgba(168, 85, 247, 0.2);
+            color: #d8b4fe;
+        }
+        
+        .role-user {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .status-online {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-offline {
+            background: rgba(107, 114, 128, 0.2);
+            color: #d1d5db;
+            border: 1px solid rgba(107, 114, 128, 0.3);
+        }
+        
+        .status-verified {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .status-unverified {
+            background: rgba(249, 115, 22, 0.2);
+            color: #fed7aa;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #9ca3af;
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-family: 'Monaco', monospace;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 flex flex-col justify-between overflow-y-auto">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
+                </a>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+                <a href="/api/admin/payouts" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-coins w-5"></i> Payouts
+                </a>
+                <a href="/api/admin/gifts" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-gift w-5"></i> Gift Management
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-12 overflow-y-auto">
+        <!-- Back Button & Header -->
+        <div class="mb-8">
+            <a href="/api/admin/users" class="text-purple-400 hover:text-purple-300 text-sm font-semibold flex items-center gap-2 mb-4">
+                <i class="fas fa-arrow-left"></i> Back to User Directory
+            </a>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                    <%= user.name.charAt(0).toUpperCase() %>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-black text-white"><%= user.name %></h1>
+                    <p class="text-white/60"><%= user.email %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Status Bar -->
+        <div class="glass profile-header p-6 rounded-xl mb-8 flex flex-wrap gap-4 items-center justify-between">
+            <div class="flex gap-4 items-center">
+                <span class="role-badge role-<%= user.role.toLowerCase() %>">
+                    <% if (user.role === 'ADMIN') { %>
+                        <i class="fas fa-crown"></i> Administrator
+                    <% } else if (user.role === 'ARTIST') { %>
+                        <i class="fas fa-microphone"></i> Artist
+                    <% } else { %>
+                        <i class="fas fa-user"></i> Listener
+                    <% } %>
+                </span>
+                
+                <span class="status-badge <%= user.isOnline ? 'status-online' : 'status-offline' %>">
+                    <span class="w-2 h-2 rounded-full <%= user.isOnline ? 'bg-green-400' : 'bg-gray-400' %>"></span>
+                    <%= user.isOnline ? 'Online' : 'Offline' %>
+                </span>
+                
+                <% if (user.role === 'ARTIST') { %>
+                    <span class="status-badge <%= user.isVerified ? 'status-verified' : 'status-unverified' %>">
+                        <i class="fas <%= user.isVerified ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
+                        <%= user.isVerified ? 'Verified' : 'Not Verified' %>
+                    </span>
+                <% } %>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="confirmAction('ban')" class="action-btn action-btn-danger">
+                    <i class="fas fa-ban"></i> Ban User
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - User Info -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Personal Information -->
+                <div class="glass p-8 rounded-xl">
+                    <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-user-circle text-purple-400"></i> Personal Information
+                    </h2>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value"><%= user.name %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Email Address</span>
+                        <span class="info-value"><%= user.email %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Username</span>
+                        <span class="info-value"><%= user.username || 'N/A' %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Phone Number</span>
+                        <span class="info-value"><%= user.phone || 'Not Provided' %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">User ID</span>
+                        <span class="info-value text-xs"><%= user.id %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Member Since</span>
+                        <span class="info-value"><%= new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+                    </div>
+                </div>
+
+                <!-- Account Activity -->
+                <div class="glass p-8 rounded-xl">
+                    <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-history text-blue-400"></i> Account Activity
+                    </h2>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Last Login</span>
+                        <span class="info-value">
+                            <% if (user.lastLogin) { %>
+                                <%= new Date(user.lastLogin).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                            <% } else { %>
+                                Never logged in
+                            <% } %>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Last IP Address</span>
+                        <span class="info-value text-xs"><%= user.lastLoginIp || 'Unknown' %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Last Region</span>
+                        <span class="info-value"><%= user.lastLoginRegion || 'Unknown' %></span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Wallet Balance</span>
+                        <span class="info-value text-lg text-emerald-400">$<%= (user.walletBalance || 0).toFixed(2) %></span>
+                    </div>
+                </div>
+
+                <!-- Content Statistics -->
+                <% if (user.role === 'ARTIST') { %>
+                    <div class="glass p-8 rounded-xl">
+                        <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-orange-400"></i> Content Statistics
+                        </h2>
+                        
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="stat-card p-4 rounded-lg text-center">
+                                <p class="text-3xl font-black text-purple-400 mb-2">
+                                    <%= (user.songs && user.songs.length) || 0 %>
+                                </p>
+                                <p class="text-xs text-white/60 uppercase font-bold">Songs Uploaded</p>
+                            </div>
+                            
+                            <div class="stat-card p-4 rounded-lg text-center">
+                                <p class="text-3xl font-black text-yellow-400 mb-2">
+                                    <%= (user.shorts && user.shorts.length) || 0 %>
+                                </p>
+                                <p class="text-xs text-white/60 uppercase font-bold">Shorts Uploaded</p>
+                            </div>
+                            
+                            <div class="stat-card p-4 rounded-lg text-center">
+                                <p class="text-3xl font-black text-emerald-400 mb-2">
+                                    <%= 0 %>
+                                </p>
+                                <p class="text-xs text-white/60 uppercase font-bold">Live Streams</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Uploads -->
+                    <% if (user.songs && user.songs.length > 0) { %>
+                        <div class="glass p-8 rounded-xl">
+                            <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-2">
+                                <i class="fas fa-music text-pink-400"></i> Recent Songs
+                            </h2>
+                            <div class="space-y-3 max-h-64 overflow-y-auto">
+                                <% user.songs.slice(0, 5).forEach(song => { %>
+                                    <div class="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="font-semibold text-white"><%= song.title %></p>
+                                                <p class="text-xs text-white/50 mt-1">
+                                                    <%= new Date(song.createdAt).toLocaleDateString() %>
+                                                </p>
+                                            </div>
+                                            <p class="text-sm text-white/70"><%= song.playCount %> plays</p>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <% if (user.shorts && user.shorts.length > 0) { %>
+                        <div class="glass p-8 rounded-xl">
+                            <h2 class="text-2xl font-black text-white mb-6 flex items-center gap-2">
+                                <i class="fas fa-film text-yellow-400"></i> Recent Shorts
+                            </h2>
+                            <div class="space-y-3 max-h-64 overflow-y-auto">
+                                <% user.shorts.slice(0, 5).forEach(short => { %>
+                                    <div class="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="font-semibold text-white"><%= short.title %></p>
+                                                <p class="text-xs text-white/50 mt-1">
+                                                    <%= new Date(short.createdAt).toLocaleDateString() %>
+                                                </p>
+                                            </div>
+                                            <p class="text-sm text-white/70"><%= short.playCount %> plays</p>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } %>
+            </div>
+
+            <!-- Right Column - Quick Actions & Summary -->
+            <div class="space-y-8">
+                <!-- Account Summary -->
+                <div class="glass p-8 rounded-xl sticky top-12">
+                    <h2 class="text-xl font-black text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-blue-400"></i> Account Summary
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <p class="text-xs text-white/60 mb-1 uppercase font-bold">Status</p>
+                            <p class="text-lg font-bold text-white">
+                                <%= user.isOnline ? 'Online' : 'Offline' %>
+                            </p>
+                        </div>
+                        
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <p class="text-xs text-white/60 mb-1 uppercase font-bold">Role</p>
+                            <p class="text-lg font-bold text-white">
+                                <%= user.role === 'ADMIN' ? 'Administrator' : user.role === 'ARTIST' ? 'Artist' : 'Listener' %>
+                            </p>
+                        </div>
+                        
+                        <% if (user.role === 'ARTIST') { %>
+                            <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                                <p class="text-xs text-white/60 mb-1 uppercase font-bold">Verification</p>
+                                <p class="text-lg font-bold <%= user.isVerified ? 'text-green-400' : 'text-orange-400' %>">
+                                    <%= user.isVerified ? 'Verified' : 'Unverified' %>
+                                </p>
+                            </div>
+                        <% } %>
+                        
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <p class="text-xs text-white/60 mb-1 uppercase font-bold">Wallet</p>
+                            <p class="text-lg font-bold text-emerald-400">$<%= (user.walletBalance || 0).toFixed(2) %></p>
+                        </div>
+                        
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <p class="text-xs text-white/60 mb-1 uppercase font-bold">Member Since</p>
+                            <p class="text-sm text-white">
+                                <%= new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <% if (user.role === 'ARTIST' && !user.isVerified) { %>
+                        <button onclick="verifyArtist()" class="w-full action-btn action-btn-primary mt-6">
+                            <i class="fas fa-check"></i> Verify Artist
+                        </button>
+                    <% } %>
+                </div>
+
+                <!-- Recent Transactions -->
+                <% if (user.transactions && user.transactions.length > 0) { %>
+                    <div class="glass p-8 rounded-xl">
+                        <h2 class="text-xl font-black text-white mb-6 flex items-center gap-2">
+                            <i class="fas fa-exchange-alt text-green-400"></i> Recent Transactions
+                        </h2>
+                        
+                        <div class="space-y-2 max-h-72 overflow-y-auto">
+                            <% user.transactions.slice(0, 8).forEach(txn => { %>
+                                <div class="p-3 bg-white/5 rounded-lg text-sm">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="font-semibold text-white capitalize"><%= txn.type.replace(/_/g, ' ') %></span>
+                                        <span class="text-xs font-mono <%= txn.type === 'WITHDRAWAL' ? 'text-red-400' : 'text-green-400' %>">
+                                            <%= txn.type === 'WITHDRAWAL' ? '-' : '+' %>$<%= txn.amount.toFixed(2) %>
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-white/50">
+                                        <%= new Date(txn.createdAt).toLocaleDateString() %>
+                                    </p>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function confirmAction(action) {
+            if (action === 'ban') {
+                if (confirm('Are you sure you want to ban this user? This action cannot be easily undone.')) {
+                    banUser();
+                }
+            }
+        }
+
+        function banUser() {
+            const userId = '<%= user.id %>';
+            fetch(`/api/admin/user/${userId}/ban`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    window.location.href = '/api/admin/users';
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+
+        function verifyArtist() {
+            const userId = '<%= user.id %>';
+            fetch(`/api/admin/verify-artist/${userId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload();
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout error:', err));
+            }
+        }
+    </script>
+</body>
+</html>

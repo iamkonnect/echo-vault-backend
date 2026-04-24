@@ -1,0 +1,49 @@
+$kind: http-request
+name: Get Music Library
+method: GET
+url: '{{baseUrl}}/api/artist/music'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{artistToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response has songs as array", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("songs");
+        pm.expect(json.songs).to.be.an("array");
+      });
+      pm.test("Response has videos as array", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("videos");
+        pm.expect(json.videos).to.be.an("array");
+      });
+      pm.test("Response has totalSongs as number", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("totalSongs");
+        pm.expect(json.totalSongs).to.be.a("number");
+      });
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response is valid JSON", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an("object");
+      });
+      
+      pm.test("Response has data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("data");
+      });

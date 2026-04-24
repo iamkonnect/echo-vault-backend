@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoVault - Portal Entry</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        .side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.5s ease; position: relative; }
+        
+        /* Artist Side (Left) */
+        .artist-side { background-color: #f8f9fa; color: #333; }
+        .artist-side:hover { flex: 1.1; background-color: #ffffff; }
+        
+        /* Admin Side (Right) */
+        .admin-side { background-color: #121212; color: #ffffff; border-left: 2px solid #333; }
+        .admin-side:hover { flex: 1.1; background-color: #1a1a1a; }
+
+        .card { padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 320px; text-align: center; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+        .artist-side .card { background: white; }
+        
+        h2 { margin-bottom: 25px; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; background: transparent; color: inherit; }
+        
+        button { width: 100%; padding: 14px; margin-top: 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: transform 0.2s; }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .btn-artist { background: #6c5ce7; color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); }
+        .btn-admin { background: #ff7675; color: white; box-shadow: 0 4px 15px rgba(255, 118, 117, 0.3); }
+        
+        .badge { font-size: 0.8rem; opacity: 0.7; margin-bottom: 10px; display: block; }
+        
+        .error { color: #e74c3c; font-size: 0.9rem; margin-top: 10px; }
+        .loading { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Artist Section -->
+    <div class="side artist-side">
+        <div class="card">
+            <span class="badge">ECHOVAULT ARTIST</span>
+            <h2>Artist Portal</h2>
+            <form id="artistForm" onsubmit="handleLogin(event, 'artist')">
+                <input type="email" id="artistEmail" placeholder="Artist Email" value="artist@gmail.com" required>
+                <input type="password" id="artistPass" placeholder="Password" value="1234Abc!" required>
+                <button type="submit" class="btn-artist" id="artistBtn">Enter Artist View</button>
+                <div class="error" id="artistError"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Section -->
+    <div class="side admin-side">
+        <div class="card">
+            <span class="badge">ECHOVAULT ADMIN</span>
+            <h2>Admin Central</h2>
+            <form id="adminForm" onsubmit="handleLogin(event, 'admin')">
+                <input type="email" id="adminEmail" placeholder="Admin Email" value="akwera@gmail.com" required style="border-color: #444;">
+                <input type="password" id="adminPass" placeholder="Password" value="1234Abc!" required style="border-color: #444;">
+                <button type="submit" class="btn-admin" id="adminBtn">Access Admin Dashboard</button>
+                <div class="error" id="adminError"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin(event, type) {
+            event.preventDefault();
+            
+            const email = type === 'admin' ? document.getElementById('adminEmail').value : document.getElementById('artistEmail').value;
+            const password = type === 'admin' ? document.getElementById('adminPass').value : document.getElementById('artistPass').value;
+            const btn = type === 'admin' ? document.getElementById('adminBtn') : document.getElementById('artistBtn');
+            const errorDiv = type === 'admin' ? document.getElementById('adminError') : document.getElementById('artistError');
+            
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            errorDiv.textContent = '';
+
+            try {
+                // Use the correct endpoint for dashboard login (renders HTML directly)
+                const response = await fetch('/api/auth/login-dashboard', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email, 
+                        password,
+                        role: type === 'admin' ? 'ADMIN' : 'ARTIST'
+                    })
+                });
+
+                if (response.ok) {
+                    // Server will render the dashboard HTML directly
+                    // Just navigate to the response
+                    window.location.href = response.url || '/';
+                } else if (response.status === 401) {
+                    errorDiv.textContent = 'Invalid email or password';
+                } else if (response.status === 403) {
+                    errorDiv.textContent = 'Access denied. Check your role.';
+                } else {
+                    errorDiv.textContent = 'Login failed. Please try again.';
+                }
+            } catch (err) {
+                console.error('Login Error:', err);
+                errorDiv.textContent = 'Could not connect to the server. Is the backend running?';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = type === 'admin' ? 'Access Admin Dashboard' : 'Enter Artist View';
+            }
+        }
+    </script>
+
+</body>
+</html>

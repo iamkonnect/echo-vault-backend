@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 8e5fe594-cb42-4db0-889f-754077d0cfa2
+
+localResources:
+  collections:
+    - ..\EchoVault_API_Testing.postman_collection.json

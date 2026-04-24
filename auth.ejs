@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoVault - Authentication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #065F46 0%, #0D9488 50%, #14B8A6 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus-within {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: white;
+            -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+        .hidden-signup {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-6">
+
+    <div class="w-full max-w-md text-center">
+        <!-- Logo/Header -->
+        <div class="mb-10">
+            <i class="fas fa-headphones text-6xl text-white mb-4"></i>
+            <h1 class="text-4xl font-bold text-white tracking-[0.2em] uppercase">EchoVault</h1>
+            <p id="auth-subtitle" class="text-white/70 mt-2">Welcome back to the sound</p>
+        </div>
+
+        <!-- Auth Card -->
+        <div class="glass p-8 shadow-2xl max-h-96 overflow-y-auto">
+            <form id="auth-form" action="/api/auth/login-dashboard" method="POST" enctype="multipart/form-data" class="space-y-4">
+                
+                <!-- Username Field (Sign Up Only) -->
+                <div id="username-field" class="hidden-signup">
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-at text-white/50 mr-3"></i>
+                        <input type="text" name="username" placeholder="Artist Name (username)" 
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm">
+                    </div>
+                    <p class="text-xs text-white/40 mt-1 px-4">3+ characters, alphanumeric + underscores</p>
+                </div>
+
+                <!-- Full Name Field (Sign Up Only) -->
+                <div id="name-field" class="hidden-signup">
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-user text-white/50 mr-3"></i>
+                        <input type="text" name="name" placeholder="Display Name" 
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm">
+                    </div>
+                </div>
+
+                <!-- Phone Field (Sign Up Only) -->
+                <div id="phone-field" class="hidden-signup">
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-phone text-white/50 mr-3"></i>
+                        <input type="tel" name="phone" placeholder="Phone Number" 
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm">
+                    </div>
+                </div>
+
+                <!-- Profile Picture Field (Sign Up Only) -->
+                <div id="picture-field" class="hidden-signup">
+                    <label class="text-xs text-white/60 block mb-1 px-4">Profile Picture</label>
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-image text-white/50 mr-3"></i>
+                        <input type="file" name="profilePicture" accept="image/*"
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm"
+                               id="profilePicture">
+                    </div>
+                </div>
+
+                <!-- Email Field -->
+                <div>
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-envelope text-white/50 mr-3"></i>
+                        <input type="email" name="email" placeholder="Email Address" required
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm">
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-lock text-white/50 mr-3"></i>
+                        <input type="password" name="password" id="password" placeholder="Password" required
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm">
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field (Sign Up Only) -->
+                <div id="confirm-password-field" class="hidden-signup">
+                    <div class="glass-input flex items-center rounded-xl px-4 py-1">
+                        <i class="fas fa-lock text-white/50 mr-3"></i>
+                        <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" 
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30 text-sm">
+                    </div>
+                    <p class="text-xs text-white/40 mt-1 px-4" id="passwordMatch"></p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submit-btn" 
+                        class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 text-sm mt-6">
+                    LOGIN
+                </button>
+            </form>
+
+            <!-- Toggle Link -->
+            <button id="toggle-auth" type="button" class="mt-4 text-white/60 hover:text-white transition text-sm">
+                Don't have an account? <span class="text-purple-400 font-bold">Sign Up</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('auth-form');
+        const toggleBtn = document.getElementById('toggle-auth');
+        const usernameField = document.getElementById('username-field');
+        const nameField = document.getElementById('name-field');
+        const phoneField = document.getElementById('phone-field');
+        const pictureField = document.getElementById('picture-field');
+        const confirmPasswordField = document.getElementById('confirm-password-field');
+        const submitBtn = document.getElementById('submit-btn');
+        const subtitle = document.getElementById('auth-subtitle');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordMatch = document.getElementById('passwordMatch');
+        
+        let isLoginMode = true;
+
+        // Real-time password matching
+        function checkPasswordMatch() {
+            if (!isLoginMode) {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (confirmPassword.length === 0) {
+                    passwordMatch.textContent = '';
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    passwordMatch.textContent = '❌ Passwords do not match';
+                    passwordMatch.classList.add('text-red-400');
+                    passwordMatch.classList.remove('text-emerald-400');
+                    submitBtn.disabled = true;
+                } else {
+                    passwordMatch.textContent = '✓ Passwords match';
+                    passwordMatch.classList.add('text-emerald-400');
+                    passwordMatch.classList.remove('text-red-400');
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+
+        passwordInput.addEventListener('input', checkPasswordMatch);
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            
+            if (isLoginMode) {
+                // Switch to Login
+                form.action = '/api/auth/login-dashboard';
+                usernameField.classList.add('hidden-signup');
+                nameField.classList.add('hidden-signup');
+                phoneField.classList.add('hidden-signup');
+                pictureField.classList.add('hidden-signup');
+                confirmPasswordField.classList.add('hidden-signup');
+                submitBtn.innerText = 'LOGIN';
+                submitBtn.disabled = false;
+                subtitle.innerText = 'Welcome back to the sound';
+                toggleBtn.innerHTML = "Don't have an account? <span class='text-purple-400 font-bold'>Sign Up</span>";
+            } else {
+                // Switch to Sign Up
+                form.action = '/api/auth/register-dashboard';
+                usernameField.classList.remove('hidden-signup');
+                nameField.classList.remove('hidden-signup');
+                phoneField.classList.remove('hidden-signup');
+                pictureField.classList.remove('hidden-signup');
+                confirmPasswordField.classList.remove('hidden-signup');
+                submitBtn.innerText = 'CREATE ACCOUNT';
+                subtitle.innerText = 'Join the music revolution';
+                toggleBtn.innerHTML = "Have an account? <span class='text-purple-400 font-bold'>Login</span>";
+            }
+        });
+
+        // Form submission with AJAX
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Client-side validation
+            if (!isLoginMode) {
+                const username = form.elements['username'].value.trim();
+                const name = form.elements['name'].value.trim();
+                const email = form.elements['email'].value.trim();
+                const password = form.elements['password'].value;
+                const confirmPassword = form.elements['confirmPassword'].value;
+
+                if (username.length < 3) {
+                    showError('Artist name must be at least 3 characters');
+                    return;
+                }
+
+                if (!/^[a-zA-Z0-9_]*$/.test(username)) {
+                    showError('Artist name can only contain letters, numbers, and underscores');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showError('Password must be at least 6 characters');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match');
+                    return;
+                }
+            }
+
+            // Submit form via AJAX
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || data.message || 'An error occurred');
+                    return;
+                }
+
+                // Success - redirect after a brief delay
+                showSuccess(data.message || 'Success! Redirecting...');
+                setTimeout(() => {
+                    if (isLoginMode) {
+                        // Redirect to appropriate dashboard based on role
+                        if (data.role === 'ARTIST') {
+                            window.location.href = '/artist-dashboard';
+                        } else if (['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS'].includes(data.role)) {
+                            window.location.href = '/admin-dashboard';
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    } else {
+                        // Registration successful - redirect to login
+                        window.location.href = '/api/auth/login';
+                    }
+                }, 1500);
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        });
+
+        // Error message display
+        function showError(message) {
+            removeMessages();
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'error-message';
+            errorDiv.className = 'bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg text-sm mb-4';
+            errorDiv.textContent = message;
+            form.insertBefore(errorDiv, form.firstChild);
+        }
+
+        // Success message display
+        function showSuccess(message) {
+            removeMessages();
+            const successDiv = document.createElement('div');
+            successDiv.id = 'success-message';
+            successDiv.className = 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-lg text-sm mb-4';
+            successDiv.textContent = message;
+            form.insertBefore(successDiv, form.firstChild);
+        }
+
+        // Remove existing messages
+        function removeMessages() {
+            const existing = form.querySelector('#error-message, #success-message');
+            if (existing) existing.remove();
+        }
+
+        // Show error message if redirected back with error query param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            showError(decodeURIComponent(urlParams.get('error')));
+        }
+    </script>
+</body>
+</html>

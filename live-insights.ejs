@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Insights - EchoVault Artist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .stat-card { background-color: #1a1a1a; border: 1px solid #333; }
+        .active-link { background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid rgb(168, 85, 247); }
+        .stream-card { background-color: #1a1a1a; border: 1px solid #333; transition: all 0.3s ease; }
+        .stream-card:hover { border-color: #a855f7; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col overflow-y-auto">
+        <div class="p-6 text-2xl font-bold text-purple-500">
+            <i class="fas fa-music mr-2"></i>EchoVault
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 py-6">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium px-2">Navigation</div>
+            
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-r-lg transition-all">
+                <i class="fas fa-home mr-3 w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-compact-disc mr-3 w-5"></i>
+                <span>My Music</span>
+            </a>
+            
+            <a href="/api/artist/shorts-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Shorts Insights</span>
+            </a>
+            
+            <a href="/api/artist/live-insights" class="flex items-center p-3 text-white active-link rounded-r-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Live Insights</span>
+            </a>
+            
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-wallet mr-3 w-5"></i>
+                <span>Revenue</span>
+            </a>
+
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-8 mb-4 font-medium px-2">Upload</div>
+            
+            <a href="/api/artist/upload/audio" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-music mr-3 w-5"></i>
+                <span>Upload Song</span>
+            </a>
+            
+            <a href="/api/artist/upload/video" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Upload Video</span>
+            </a>
+            
+            <a href="/api/artist/upload/shorts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-film mr-3 w-5"></i>
+                <span>Upload Short</span>
+            </a>
+        </nav>
+
+        <button onclick="logout()" class="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-all border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <header class="flex justify-between items-center mb-10 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-4xl font-bold text-purple-400 mb-2">
+                    <i class="fas fa-video mr-3"></i>Live Insights
+                </h1>
+                <p class="text-gray-400">Monitor your live streams and real-time engagement</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="/api/artist/dashboard" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all font-medium">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </a>
+            </div>
+        </header>
+
+        <!-- Live Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="stat-card p-6 rounded-2xl hover:border-blue-500/50 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-500/10 rounded-lg text-blue-400">
+                        <i class="fas fa-eye text-xl"></i>
+                    </div>
+                    <span class="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded">Peak Viewers</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-2">Total Peak Viewers</p>
+                <h2 class="text-3xl font-bold"><%= (liveStats.viewers || 0).toLocaleString() %></h2>
+            </div>
+
+            <div class="stat-card p-6 rounded-2xl hover:border-pink-500/50 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-pink-500/10 rounded-lg text-pink-400">
+                        <i class="fas fa-gift text-xl"></i>
+                    </div>
+                    <span class="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded">+8%</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-2">Total Gifts Received</p>
+                <h2 class="text-3xl font-bold"><%= (liveStats.gifts || 0).toLocaleString() %></h2>
+            </div>
+
+            <div class="stat-card p-6 rounded-2xl hover:border-green-500/50 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-green-500/10 rounded-lg text-green-400">
+                        <i class="fas fa-coins text-xl"></i>
+                    </div>
+                    <span class="text-xs text-orange-500 font-bold bg-orange-500/10 px-2 py-1 rounded">Live Revenue</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-2">Total Live Revenue</p>
+                <h2 class="text-3xl font-bold text-green-400">$<%= (liveStats.revenue || 0).toFixed(2) %></h2>
+            </div>
+        </div>
+
+        <!-- Live Streams History -->
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-2xl font-bold flex items-center gap-3">
+                    <i class="fas fa-history text-purple-400"></i>
+                    Recent Live Streams
+                </h3>
+                <span class="text-sm text-gray-400">
+                    <i class="fas fa-circle text-red-500 mr-2"></i>
+                    <% if (liveStreams && liveStreams.length > 0) { %>
+                        <%= liveStreams.length %> Stream<%= liveStreams.length > 1 ? 's' : '' %>
+                    <% } else { %>
+                        No streams yet
+                    <% } %>
+                </span>
+            </div>
+
+            <% if (!liveStreams || liveStreams.length === 0) { %>
+                <div class="text-center py-16">
+                    <div class="text-6xl text-gray-600 mb-4">
+                        <i class="fas fa-video-slash"></i>
+                    </div>
+                    <p class="text-gray-400 text-lg mb-6">No live streams yet. Start your first stream to see insights!</p>
+                    <a href="#" class="px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all font-medium">
+                        <i class="fas fa-circle mr-2"></i>Go Live Now
+                    </a>
+                </div>
+            <% } else { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <% liveStreams.forEach((stream, index) => { %>
+                        <div class="stream-card p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h4 class="text-lg font-bold mb-1"><%= stream.title || `Stream #${index + 1}` %></h4>
+                                    <p class="text-sm text-gray-400">
+                                        <i class="fas fa-calendar mr-2"></i>
+                                        <%= new Date(stream.createdAt).toLocaleDateString() %>
+                                    </p>
+                                </div>
+                                <span class="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full">
+                                    <i class="fas fa-check mr-1"></i>Completed
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 mt-6">
+                                <div class="bg-white/5 p-4 rounded-lg text-center">
+                                    <p class="text-gray-400 text-xs mb-1">Peak Viewers</p>
+                                    <p class="text-xl font-bold text-blue-400"><%= (stream.peakViewers || 0).toLocaleString() %></p>
+                                </div>
+                                <div class="bg-white/5 p-4 rounded-lg text-center">
+                                    <p class="text-gray-400 text-xs mb-1">Gifts</p>
+                                    <p class="text-xl font-bold text-pink-400"><%= (stream.giftCount || 0).toLocaleString() %></p>
+                                </div>
+                                <div class="bg-white/5 p-4 rounded-lg text-center">
+                                    <p class="text-gray-400 text-xs mb-1">Revenue</p>
+                                    <p class="text-xl font-bold text-green-400">$<%= (stream.earnings || 0).toFixed(2) %></p>
+                                </div>
+                            </div>
+
+                            <% if (stream.description) { %>
+                                <p class="text-gray-400 text-sm mt-4"><%= stream.description %></p>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Go Live Section -->
+        <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-2xl p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-2xl font-bold mb-2">Ready to Go Live?</h3>
+                    <p class="text-gray-400">Start a new live stream and engage with your audience in real-time</p>
+                </div>
+                <button onclick="startLive()" class="px-8 py-4 bg-red-600 hover:bg-red-700 rounded-xl transition-all font-bold flex items-center gap-2 whitespace-nowrap">
+                    <i class="fas fa-circle text-lg"></i>
+                    Go Live
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => {
+                        window.location.href = '/';
+                    })
+                    .catch(err => {
+                        console.error('Logout error:', err);
+                        window.location.href = '/';
+                    });
+            }
+        }
+
+        function startLive() {
+            alert('Live streaming feature coming soon! 🎤');
+            // In future: window.location.href = '/api/artist/go-live';
+        }
+    </script>
+</body>
+</html>

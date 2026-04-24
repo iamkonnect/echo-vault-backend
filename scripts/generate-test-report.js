@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+/**
+ * Test Report Generator
+ * Combines Newman JSON reports into a summary
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+function parseTestResults(jsonFile) {
+  try {
+    const data = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+    return {
+      name: data.collection.name,
+      tests: data.run.stats.tests.total,
+      passed: data.run.stats.tests.total - data.run.stats.tests.failed,
+      failed: data.run.stats.tests.failed,
+      duration: data.run.timings.total,
+      assertions: data.run.stats.assertions.total || 0
+    };
+  } catch (e) {
+    console.error(`Error parsing ${jsonFile}:`, e.message);
+    return null;
+  }
+}
+
+function generateReport() {
+  const reportsDir = 'reports';
+  
+  if (!fs.existsSync(reportsDir)) {
+    console.error('Reports directory not found');
+    return;
+  }
+
+  const files = fs.readdirSync(reportsDir).filter(f => f.endsWith('-tests.json'));
+  
+  if (files.length === 0) {
+    console.warn('No test reports found');
+    return;
+  }
+
+  let summary = {
+    timestamp: new Date().toISOString(),
+    totalTests: 0,
+    totalPassed: 0,
+    totalFailed: 0,
+    totalDuration: 0,
+    tests: []
+  };
+
+  files.forEach(file => {
+    const results = parseTestResults(path.join(reportsDir, file));
+    if (results) {
+      summary.tests.push(results);
+      summary.totalTests += results.tests;
+      summary.totalPassed += results.passed;
+      summary.totalFailed += results.failed;
+      summary.totalDuration += results.duration;
+    }
+  });
+
+  summary.successRate = ((summary.totalPassed / summary.totalTests) * 100).toFixed(2);
+  summary.stats = {
+    totalPass: summary.totalPassed,
+    totalFail: summary.totalFailed,
+    totalTests: summary.totalTests
+  };
+
+  // Generate HTML report
+  const html = generateHTMLReport(summary);
+  fs.writeFileSync(path.join(reportsDir, 'combined-report.html'), html);
+  
+  // Save JSON summary
+  fs.writeFileSync(path.join(reportsDir, 'combined-summary.json'), JSON.stringify(summary, null, 2));
+
+  console.log('\n✓ Test Report Generated');
+  console.log(`  Total Tests: ${summary.totalTests}`);
+  console.log(`  Passed: ${summary.totalPassed}`);
+  console.log(`  Failed: ${summary.totalFailed}`);
+  console.log(`  Success Rate: ${summary.successRate}%`);
+  console.log(`  Duration: ${(summary.totalDuration / 1000).toFixed(2)}s`);
+  console.log(`\n  Report: reports/combined-report.html`);
+}
+
+function generateHTMLReport(summary) {
+  const testRows = summary.tests.map(t => `
+    <tr>
+      <td>${t.name}</td>
+      <td>${t.tests}</td>
+      <td style="color: green">${t.passed}</td>
+      <td style="color: red">${t.failed}</td>
+      <td>${(t.duration / 1000).toFixed(2)}s</td>
+    </tr>
+  `).join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EchoVault API Test Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+    h1 { color: #333; }
+    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+    .metric { background: #f9f9f9; padding: 15px; border-radius: 4px; text-align: center; }
+    .metric-value { font-size: 28px; font-weight: bold; color: #007bff; }
+    .metric-label { color: #666; font-size: 12px; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #007bff; color: white; padding: 12px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #ddd; }
+    tr:hover { background: #f5f5f5; }
+    .footer { margin-top: 30px; color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 EchoVault API - Test Report</h1>
+    <p>Generated: ${new Date(summary.timestamp).toLocaleString()}</p>
+    
+    <div class="summary">
+      <div class="metric">
+        <div class="metric-value">${summary.totalTests}</div>
+        <div class="metric-label">Total Tests</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" style="color: green">${summary.totalPassed}</div>
+        <div class="metric-label">Passed</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" style="color: red">${summary.totalFailed}</div>
+        <div class="metric-label">Failed</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" style="color: orange">${summary.successRate}%</div>
+        <div class="metric-label">Success Rate</div>
+      </div>
+    </div>
+
+    <h2>Test Suites</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Suite</th>
+          <th>Total</th>
+          <th>Passed</th>
+          <th>Failed</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${testRows}
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <p>Report generated by EchoVault Test Runner</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+generateReport();

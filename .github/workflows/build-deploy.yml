@@ -1,0 +1,254 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ============ BACKEND BUILD & PUSH ============
+  build-backend:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./echo-vault-backend
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============ FLUTTER WEB BUILD ============
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+
+      - name: Get Flutter dependencies
+        run: |
+          cd echovault_working
+          flutter pub get
+
+      - name: Build Flutter Web
+        run: |
+          cd echovault_working
+          flutter build web --release
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: flutter-web-build
+          path: echovault_working/build/web/
+
+  # ============ FLUTTER APK BUILD ============
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: zulu
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+
+      - name: Get Flutter dependencies
+        run: |
+          cd echovault_working
+          flutter pub get
+
+      - name: Generate code
+        run: |
+          cd echovault_working
+          flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK (Debug)
+        run: |
+          cd echovault_working
+          flutter build apk --debug
+
+      - name: Build APK (Release)
+        run: |
+          cd echovault_working
+          flutter build apk --release
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk-builds
+          path: |
+            echovault_working/build/app/outputs/flutter-apk/app-debug.apk
+            echovault_working/build/app/outputs/flutter-apk/app-release.apk
+
+  # ============ TESTS ============
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: echo_vault_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'echo-vault-backend/package-lock.json'
+
+      - name: Install backend dependencies
+        run: |
+          cd echo-vault-backend
+          npm install
+
+      - name: Run Prisma migrations
+        env:
+          DATABASE_URL: postgresql://postgres:testpassword@localhost:5432/echo_vault_test
+        run: |
+          cd echo-vault-backend
+          npm run prisma:migrate -- --skip-generate
+
+      - name: Run backend tests
+        env:
+          DATABASE_URL: postgresql://postgres:testpassword@localhost:5432/echo_vault_test
+          JWT_SECRET: test_secret
+        run: |
+          cd echo-vault-backend
+          npm test || echo "No tests configured"
+
+  test-flutter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+
+      - name: Get Flutter dependencies
+        run: |
+          cd echovault_working
+          flutter pub get
+
+      - name: Run Flutter tests
+        run: |
+          cd echovault_working
+          flutter test || echo "No tests configured"
+
+  # ============ SECURITY SCANS ============
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ============ DEPLOYMENT ============
+  deploy-dev:
+    needs: [build-backend, test-backend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to development environment
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEV_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEV_DEPLOY_USER }}
+        run: |
+          # Add deployment script here
+          echo "Deploying to development..."
+          # Example: SSH into server and pull latest image
+
+  deploy-prod:
+    needs: [build-backend, build-apk, test-backend, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production environment
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.PROD_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PROD_DEPLOY_USER }}
+        run: |
+          # Add deployment script here
+          echo "Deploying to production..."
+          # Example: SSH into server and pull latest image

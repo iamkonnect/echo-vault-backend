@@ -1,0 +1,72 @@
+{
+  "name": "EchoVault API - Collection Run",
+  "description": "Automated collection runner for EchoVault API testing",
+  "folders": [
+    {
+      "name": "Auth Flow",
+      "requests": [
+        "Register",
+        "Login",
+        "Verify Auth",
+        "Refresh Token",
+        "Logout"
+      ]
+    },
+    {
+      "name": "Artist Workflow",
+      "requests": [
+        "Login",
+        "Get Insights",
+        "Get Music Library",
+        "Upload Music",
+        "Request Withdrawal",
+        "Get Earnings Breakdown",
+        "Get Withdrawal History"
+      ]
+    },
+    {
+      "name": "Artist Dashboard",
+      "requests": [
+        "Login Dashboard",
+        "Get Dashboard",
+        "Get My Music Page",
+        "Get Shorts Insights",
+        "Get Revenue Page"
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "requests": [
+        "Get Dashboard Stats",
+        "Get All Users",
+        "Get Unverified Artists",
+        "Verify Artist",
+        "Approve Payout",
+        "Reject Payout"
+      ]
+    },
+    {
+      "name": "Public Data",
+      "requests": [
+        "Get Trending Tracks",
+        "Get Featured Tracks",
+        "Get Live Streams",
+        "Get Active Streams",
+        "Get Analytics Data"
+      ]
+    }
+  ],
+  "runOrder": [
+    "auth",
+    "artist",
+    "admin",
+    "public"
+  ],
+  "testSettings": {
+    "stopOnError": false,
+    "stopOnFailure": false,
+    "retries": 1,
+    "delay": 100,
+    "timeout": 30000
+  }
+}

@@ -1,0 +1,44 @@
+const jwt = require('jsonwebtoken');
+const prisma = require('./src/utils/prisma');
+
+exports.protect = async (req, res, next) => {
+  let token;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+
+  if (!token) {
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.status(401).json({ message: 'Not authorized to access this route' });
+    }
+    return res.redirect('/?error=Unauthorized');
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user) {
+      return res.status(401).json({ message: 'User no longer exists' });
+    }
+    req.user = user;
+    next();
+  } catch (err) {
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    res.clearCookie('token');
+    return res.redirect('/?error=Session%20expired');
+  }
+};
+
+exports.authorize = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: `Role ${req.user.role} is not authorized` });
+    }
+    next();
+  };
+};

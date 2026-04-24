@@ -1,0 +1,49 @@
+$kind: http-request
+name: Get Insights
+method: GET
+url: '{{baseUrl}}/api/artist/insights'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{artistToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response has totalPlays as number", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("totalPlays");
+        pm.expect(json.totalPlays).to.be.a("number");
+      });
+      pm.test("Response has currentBalance as number", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("currentBalance");
+        pm.expect(json.currentBalance).to.be.a("number");
+      });
+      pm.test("Response has shorts as array", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("shorts");
+        pm.expect(json.shorts).to.be.an("array");
+      });
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response is valid JSON", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an("object");
+      });
+      
+      pm.test("Response has data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("data");
+      });

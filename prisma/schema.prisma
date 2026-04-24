@@ -1,0 +1,162 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ARTIST
+  ADMIN
+}
+
+enum StreamStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  GIFT_SENT
+  GIFT_RECEIVED
+  PLATFORM_FEE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+  role            Role     @default(USER)
+  username        String?  @unique
+  name            String?
+  phone           String?
+  avatarUrl       String?
+  walletBalance   Float    @default(0)
+  isOnline        Boolean  @default(false)
+  isVerified      Boolean  @default(false)
+  verifiedAt      DateTime?
+  lastLogin       DateTime?
+  lastLoginIp     String?
+  lastLoginRegion String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  songs           Song[]
+  videos          Video[]
+  shorts          Short[]
+  liveStreams     LiveStream[]
+  giftsSent       Gift[]   @relation("sender")
+  giftsReceived   Gift[]   @relation("receiver")
+  transactions    Transaction[]
+}
+
+model Song {
+  id        String   @id @default(uuid())
+  title     String
+  artistId  String
+  artist    User     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  coverUrl  String?
+  fileUrl   String
+  duration  Int
+  playCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Video {
+  id        String   @id @default(uuid())
+  title     String
+  artistId  String
+  artist    User     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  thumbnailUrl String?
+  fileUrl   String
+  duration  Int
+  playCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Short {
+  id        String   @id @default(uuid())
+  title     String
+  artistId  String
+  artist    User     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  videoUrl  String
+  thumbnailUrl String?
+  duration  Int
+  giftCount Int      @default(0)
+  playCount Int      @default(0)
+  gifts     Gift[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LiveStream {
+  id        String         @id @default(uuid())
+  title     String
+  artistId  String
+  artist    User           @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  status    StreamStatus   @default(SCHEDULED)
+  scheduledAt DateTime?
+  startedAt DateTime?
+  endedAt   DateTime?
+  giftCount Int            @default(0)
+  viewerCount Int          @default(0)
+  gifts     Gift[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Gift {
+  id                String   @id @default(uuid())
+  amount            Float
+  senderId          String
+  sender            User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId        String
+  receiver          User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  shortId           String?
+  short             Short?   @relation(fields: [shortId], references: [id], onDelete: SetNull)
+  liveStreamId      String?
+  liveStream        LiveStream? @relation(fields: [liveStreamId], references: [id], onDelete: SetNull)
+  createdAt         DateTime @default(now())
+  adminPercentage   Float    @default(0.10)
+  artistPercentage  Float    @default(0.70)
+  userPercentage    Float    @default(0.20)
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Float
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model GiftTemplate {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  icon          String
+  price         Float
+  actualAmount  Float
+  artistShare   Float    @default(0.4)
+  creatorShare  Float    @default(0.4)
+  adminShare    Float    @default(0.2)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

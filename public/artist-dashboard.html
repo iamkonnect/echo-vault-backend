@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artist Dashboard - EchoVault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-5xl font-black bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent tracking-tight mb-2">Artist Portal</h1>
+                <p class="text-xl text-white/60" id="userName">Welcome, Artist</p>
+            </div>
+            <button onclick="logout()" class="px-6 py-2 bg-red-500/20 border border-red-500/50 text-red-300 rounded-lg hover:bg-red-500/30">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+        </header>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="glass p-8 border border-purple-500/20 hover:border-purple-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-purple-500/20 rounded-xl"><i class="fas fa-play text-purple-400"></i></span>
+                    <span class="text-emerald-400 text-sm font-bold">↑ 12%</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Total Plays</p>
+                <p class="text-4xl font-black" id="totalPlays">0</p>
+            </div>
+
+            <div class="glass p-8 border border-pink-500/20 hover:border-pink-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-pink-500/20 rounded-xl"><i class="fas fa-gift text-pink-400"></i></span>
+                    <span class="text-emerald-400 text-sm font-bold">↑ 8%</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Total Earnings</p>
+                <p class="text-4xl font-black" id="totalEarnings">$0</p>
+            </div>
+
+            <div class="glass p-8 border border-blue-500/20 hover:border-blue-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-blue-500/20 rounded-xl"><i class="fas fa-wallet text-blue-400"></i></span>
+                    <span class="text-emerald-400 text-sm font-bold">Available</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Wallet Balance</p>
+                <p class="text-4xl font-black" id="walletBalance">$0</p>
+            </div>
+
+            <div class="glass p-8 border border-orange-500/20 hover:border-orange-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-orange-500/20 rounded-xl"><i class="fas fa-film text-orange-400"></i></span>
+                    <span class="text-emerald-400 text-sm font-bold">New</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Shorts Published</p>
+                <p class="text-4xl font-black" id="shortsCount">0</p>
+            </div>
+        </div>
+
+        <!-- Shorts Performance -->
+        <div class="glass p-8 border border-purple-500/20">
+            <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-chart-bar"></i> Shorts Performance
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="border-b border-white/10">
+                        <tr>
+                            <th class="pb-4 text-white/60 font-medium">Title</th>
+                            <th class="pb-4 text-white/60 font-medium">Plays</th>
+                            <th class="pb-4 text-white/60 font-medium">Gifts Received</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shortsTable">
+                        <tr>
+                            <td colspan="3" class="py-8 text-center text-white/40">No shorts published yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        const userName = localStorage.getItem('userName');
+
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('userName').textContent = `Welcome, ${userName || 'Artist'}`;
+
+        // Fetch artist stats (mock for now)
+        function loadDashboardData() {
+            // Since we're serving static HTML, we'll show mock data
+            document.getElementById('totalPlays').textContent = '0';
+            document.getElementById('totalEarnings').textContent = '$0';
+            document.getElementById('walletBalance').textContent = '$0';
+            document.getElementById('shortsCount').textContent = '0';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            window.location.href = '/';
+        }
+
+        loadDashboardData();
+    </script>
+</body>
+</html>

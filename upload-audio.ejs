@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Audio - EchoVault Artist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .form-input { background-color: #1a1a1a; border: 1px solid #333; color: white; }
+        .active-link { background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid rgb(168, 85, 247); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col overflow-y-auto">
+        <div class="p-6 text-2xl font-bold text-purple-500">
+            <i class="fas fa-music mr-2"></i>EchoVault
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 py-6">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium px-2">Navigation</div>
+            
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-r-lg transition-all">
+                <i class="fas fa-home mr-3 w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-compact-disc mr-3 w-5"></i>
+                <span>My Music</span>
+            </a>
+            
+            <a href="/api/artist/shorts-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Shorts Insights</span>
+            </a>
+            
+            <a href="/api/artist/live-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Live Insights</span>
+            </a>
+            
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-wallet mr-3 w-5"></i>
+                <span>Revenue</span>
+            </a>
+
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-8 mb-4 font-medium px-2">Upload</div>
+            
+            <a href="/api/artist/upload/audio" class="flex items-center p-3 text-white active-link rounded-r-lg transition-all">
+                <i class="fas fa-music mr-3 w-5"></i>
+                <span>Upload Song</span>
+            </a>
+            
+            <a href="/api/artist/upload/video" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Upload Video</span>
+            </a>
+            
+            <a href="/api/artist/upload/shorts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-film mr-3 w-5"></i>
+                <span>Upload Short</span>
+            </a>
+        </nav>
+
+        <button onclick="logout()" class="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-all border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <header class="flex justify-between items-center mb-10 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-4xl font-bold text-purple-400 mb-2">
+                    <i class="fas fa-upload mr-3"></i>Upload Audio Track
+                </h1>
+                <p class="text-gray-400">Share your latest music with the world</p>
+            </div>
+            <a href="/api/artist/my-music" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all font-medium">
+                <i class="fas fa-arrow-left mr-2"></i>Back
+            </a>
+        </header>
+
+        <!-- Upload Form -->
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-3xl">
+            <form action="/api/artist/upload/audio" method="POST" enctype="multipart/form-data">
+                
+                <!-- Track Title -->
+                <div class="mb-8">
+                    <label for="title" class="block text-sm font-semibold text-gray-300 mb-3">
+                        <i class="fas fa-heading mr-2 text-purple-400"></i>Track Title
+                    </label>
+                    <input 
+                        type="text" 
+                        id="title" 
+                        name="title" 
+                        class="form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                        placeholder="e.g., My New Single" 
+                        required
+                    >
+                </div>
+
+                <!-- Genre -->
+                <div class="mb-8">
+                    <label for="genre" class="block text-sm font-semibold text-gray-300 mb-3">
+                        <i class="fas fa-tag mr-2 text-purple-400"></i>Genre (Optional)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="genre" 
+                        name="genre" 
+                        class="form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                        placeholder="e.g., Pop, Hip-Hop, Electronic, Rock"
+                    >
+                </div>
+
+                <!-- Audio File -->
+                <div class="mb-8">
+                    <label for="audioFile" class="block text-sm font-semibold text-gray-300 mb-3">
+                        <i class="fas fa-file-audio mr-2 text-blue-400"></i>Audio File
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="file" 
+                            id="audioFile" 
+                            name="audioFile" 
+                            accept="audio/*" 
+                            class="form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
+                            required
+                        >
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>Supported formats: MP3, WAV, FLAC, AAC (Max 100MB)
+                    </p>
+                </div>
+
+                <!-- Cover Art -->
+                <div class="mb-8">
+                    <label for="coverArt" class="block text-sm font-semibold text-gray-300 mb-3">
+                        <i class="fas fa-image mr-2 text-pink-400"></i>Cover Art (Optional)
+                    </label>
+                    <input 
+                        type="file" 
+                        id="coverArt" 
+                        name="coverArt" 
+                        accept="image/*" 
+                        class="form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-700"
+                    >
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>Recommended: 3000x3000px PNG or JPG
+                    </p>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    class="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fas fa-upload"></i> Upload Audio Track
+                </button>
+            </form>
+
+            <!-- Info Box -->
+            <div class="mt-8 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <p class="text-sm text-blue-300">
+                    <i class="fas fa-lightbulb mr-2"></i>
+                    <strong>Tip:</strong> High-quality audio files will help your music stand out. Make sure cover art is clear and professional!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => {
+                        window.location.href = '/';
+                    })
+                    .catch(err => {
+                        console.error('Logout error:', err);
+                        window.location.href = '/';
+                    });
+            }
+        }
+    </script>
+</body>
+</html>

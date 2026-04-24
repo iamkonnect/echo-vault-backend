@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gift Management | EchoVault Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+        .admin-sidebar { background: rgba(15,12,41,0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <!-- Sidebar (Same as Dashboard) -->
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 shadow-2xl flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-chart-line w-5"></i><span>Dashboard</span>
+                </a>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+                <a href="/api/admin/payouts" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-coins w-5"></i> Payouts
+                </a>
+                <a href="/api/admin/gifts" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <i class="fas fa-gift w-5"></i> Gift Management
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <main class="flex-1 p-12 overflow-y-auto">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-12 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-5xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 bg-clip-text text-transparent tracking-tight mb-2">🎁 Gift Management</h1>
+                <p class="text-xl text-white/60 font-light">Create, manage, and configure platform gifts with revenue splits</p>
+            </div>
+        </header>
+
+        <!-- Success Message -->
+        <% if (typeof success !== 'undefined') { %>
+            <div class="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-300">
+                <%= success %>
+            </div>
+        <% } %>
+
+        <!-- Add Gift Form -->
+        <div class="glass p-8 border border-emerald-500/20 mb-8">
+            <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-white">
+                <i class="fas fa-plus-circle text-emerald-400"></i> Create New Gift
+            </h2>
+            <form action="/api/admin/gifts/create" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-white/70 mb-2">Gift Name</label>
+                    <input type="text" name="name" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="e.g. Golden Mic" required>
+                    <small class="text-white/40 text-xs mt-1">Unique identifier</small>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/70 mb-2">Icon (GIF/PNG)</label>
+                    <input type="file" name="icon" accept=".gif,.png,image/gif,image/png" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition text-xs" required>
+                    <small class="text-white/40 text-xs mt-1">GIF or PNG format (max 2MB)</small>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/70 mb-2">Display Price</label>
+                    <input type="number" step="0.01" name="price" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
+                    <small class="text-white/40 text-xs mt-1">What users see</small>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/70 mb-2">Actual Value ($)</label>
+                    <input type="number" step="0.01" name="actualAmount" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
+                    <small class="text-white/40 text-xs mt-1">For revenue split</small>
+                </div>
+                <div class="flex flex-col justify-end">
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105">
+                        <i class="fas fa-plus mr-2"></i> Add Gift
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Revenue Split Info -->
+            <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
+                <div class="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
+                    <div class="p-2 bg-emerald-500/20 rounded"><i class="fas fa-user text-emerald-400"></i></div>
+                    <div>
+                        <p class="text-xs text-white/60">Default Artist</p>
+                        <p class="text-sm font-bold text-emerald-300">40%</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
+                    <div class="p-2 bg-blue-500/20 rounded"><i class="fas fa-play text-blue-400"></i></div>
+                    <div>
+                        <p class="text-xs text-white/60">Default Creator</p>
+                        <p class="text-sm font-bold text-blue-300">40%</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
+                    <div class="p-2 bg-purple-500/20 rounded"><i class="fas fa-building text-purple-400"></i></div>
+                    <div>
+                        <p class="text-xs text-white/60">Default Platform</p>
+                        <p class="text-sm font-bold text-purple-300">20%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Gifts -->
+        <div class="glass p-8 border border-white/10">
+            <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-white">
+                <i class="fas fa-list text-emerald-400"></i> Active Gifts (<%= gifts ? gifts.length : 0 %>)
+            </h2>
+            <% if (gifts && gifts.length > 0) { %>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5 border-b border-white/10">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-white">Icon</th>
+                                <th class="px-4 py-3 text-left font-semibold text-white">Gift Name</th>
+                                <th class="px-4 py-3 text-left font-semibold text-white">Display Price</th>
+                                <th class="px-4 py-3 text-left font-semibold text-white">Actual Value</th>
+                                <th class="px-4 py-3 text-center font-semibold text-white">Artist</th>
+                                <th class="px-4 py-3 text-center font-semibold text-white">Creator</th>
+                                <th class="px-4 py-3 text-center font-semibold text-white">Admin</th>
+                                <th class="px-4 py-3 text-left font-semibold text-white">Created</th>
+                                <th class="px-4 py-3 text-center font-semibold text-white">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% gifts.forEach(gift => { %>
+                                <tr class="border-t border-white/10 hover:bg-white/5 transition">
+                                    <td class="px-4 py-3"><img src="<%= gift.icon %>" alt="<%= gift.name %>" style="width: 40px; height: 40px; object-fit: contain;"></td>
+                                    <td class="px-4 py-3 text-white font-medium"><%= gift.name %></td>
+                                    <td class="px-4 py-3 text-white/70">$<%= parseFloat(gift.price).toFixed(2) %></td>
+                                    <td class="px-4 py-3 text-emerald-400 font-bold">$<%= parseFloat(gift.actualAmount).toFixed(2) %></td>
+                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs font-bold"><%= (gift.artistShare * 100).toFixed(0) %>%</span></td>
+                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-bold"><%= (gift.creatorShare * 100).toFixed(0) %>%</span></td>
+                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs font-bold"><%= (gift.adminShare * 100).toFixed(0) %>%</span></td>
+                                    <td class="px-4 py-3 text-white/60 text-xs"><%= new Date(gift.createdAt).toLocaleDateString() %></td>
+                                    <td class="px-4 py-3 text-center">
+                                        <form action="/api/admin/gifts/<%= gift.id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Remove this gift? This action cannot be undone.')">
+                                            <button type="submit" class="px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded text-xs font-bold transition">
+                                                <i class="fas fa-trash mr-1"></i> Remove
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="text-center py-12">
+                    <i class="fas fa-inbox text-5xl text-white/20 mb-4 block"></i>
+                    <p class="text-white/50 text-lg">No gifts created yet. Create your first gift above!</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <script>
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => { window.location.href = '/'; })
+                .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
+        }
+    </script>
+</body>
+</html>

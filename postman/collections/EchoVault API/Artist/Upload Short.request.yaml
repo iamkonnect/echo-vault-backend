@@ -1,0 +1,48 @@
+$kind: http-request
+name: Upload Short
+method: POST
+url: '{{baseUrl}}/api/artist/upload-short'
+order: 6000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{artistToken}}'
+body:
+  type: formdata
+  content:
+    - key: title
+      type: text
+      value: My Short Title
+    - key: duration
+      type: text
+      value: '60'
+    - key: file
+      type: file
+      src: ''
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201 or 400", function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400]);
+      });
+      if (pm.response.code === 201) {
+        pm.test("Response has short.id", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("short");
+          pm.expect(json.short).to.have.property("id");
+        });
+      }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

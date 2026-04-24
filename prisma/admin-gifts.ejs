@@ -1,0 +1,59 @@
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Gift Management</h1>
+    
+    <!-- Add Gift Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Add New Music Gift</h6>
+        </div>
+        <div class="card-body">
+            <form action="/api/admin/gifts/create" method="POST" class="row">
+                <div class="col-md-3">
+                    <input type="text" name="name" class="form-control" placeholder="Gift Name (e.g. Golden Mic)" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="icon" class="form-control" placeholder="Icon (Emoji)" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" step="0.01" name="price" class="form-control" placeholder="Display Price" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" step="0.01" name="actualAmount" class="form-control" placeholder="Actual Value ($)" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary btn-block">Add Gift to Platform</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing Gifts Table -->
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Icon</th>
+                        <th>Name</th>
+                        <th>Display Price</th>
+                        <th>Actual Value</th>
+                        <th>Artist Split</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% gifts.forEach(gift => { %>
+                        <tr>
+                            <td><span style="font-size: 24px;"><%= gift.icon %></span></td>
+                            <td><%= gift.name %></td>
+                            <td><%= gift.price %></td>
+                            <td>$<%= gift.actualAmount %></td>
+                            <td><%= (gift.artistShare * 100) %>%</td>
+                            <td><button class="btn btn-danger btn-sm">Remove</button></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

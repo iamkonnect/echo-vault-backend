@@ -1,0 +1,35 @@
+$kind: http-request
+name: Reject Payout
+method: POST
+url: '{{baseUrl}}/api/admin/payouts/:id/reject'
+order: 9000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{adminToken}}'
+pathVariables:
+  - key: id
+    value: ''
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Insufficient documentation"
+    }
+
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

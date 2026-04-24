@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenue - EchoVault Artist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .stat-card { background-color: #1a1a1a; border: 1px solid #333; }
+        .active-link { background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid rgb(168, 85, 247); }
+        .breakdown-card { background-color: #1a1a1a; border: 1px solid #333; transition: all 0.3s ease; }
+        .breakdown-card:hover { border-color: #a855f7; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col overflow-y-auto">
+        <div class="p-6 text-2xl font-bold text-purple-500">
+            <i class="fas fa-music mr-2"></i>EchoVault
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 py-6">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium px-2">Navigation</div>
+            
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-r-lg transition-all">
+                <i class="fas fa-home mr-3 w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-compact-disc mr-3 w-5"></i>
+                <span>My Music</span>
+            </a>
+            
+            <a href="/api/artist/shorts-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Shorts Insights</span>
+            </a>
+            
+            <a href="/api/artist/live-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Live Insights</span>
+            </a>
+            
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-white active-link rounded-r-lg transition-all">
+                <i class="fas fa-wallet mr-3 w-5"></i>
+                <span>Revenue</span>
+            </a>
+
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-8 mb-4 font-medium px-2">Upload</div>
+            
+            <a href="/api/artist/upload/audio" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-music mr-3 w-5"></i>
+                <span>Upload Song</span>
+            </a>
+            
+            <a href="/api/artist/upload/video" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Upload Video</span>
+            </a>
+            
+            <a href="/api/artist/upload/shorts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-film mr-3 w-5"></i>
+                <span>Upload Short</span>
+            </a>
+        </nav>
+
+        <button onclick="logout()" class="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-all border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <header class="flex justify-between items-center mb-10 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-4xl font-bold text-purple-400 mb-2">
+                    <i class="fas fa-chart-line mr-3"></i>Earnings & Revenue
+                </h1>
+                <p class="text-gray-400">Track your income from all revenue streams</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="text-right bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide">Available Balance</p>
+                    <p class="text-3xl font-bold text-purple-400">$<%= (currentBalance || 0).toFixed(2) %></p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <button onclick="withdrawFunds()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all font-medium flex items-center justify-center gap-2">
+                <i class="fas fa-download"></i>Withdraw Funds
+            </button>
+            <button onclick="viewHistory()" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all font-medium flex items-center justify-center gap-2">
+                <i class="fas fa-history"></i>View History
+            </button>
+        </div>
+
+        <!-- Revenue Breakdown Cards (4-way) -->
+        <div class="mb-10">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-pie-chart text-purple-400"></i>Revenue Breakdown
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Audio Music -->
+                <div class="breakdown-card p-6 rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-blue-500/20 rounded-lg text-blue-400">
+                            <i class="fas fa-music text-xl"></i>
+                        </div>
+                        <span class="text-xs text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded">Audio</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-2">Audio Music</p>
+                    <p class="text-2xl font-bold mb-3">$<%= (breakdown.audioMusic.amount || 0).toFixed(2) %></p>
+                    <div class="bg-gray-700/50 h-2 rounded-full overflow-hidden">
+                        <div class="bg-blue-500 h-full rounded-full" style="width: <%= breakdown.audioMusic.percentage %>%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2"><%= breakdown.audioMusic.percentage %>% of total</p>
+                </div>
+
+                <!-- Music Video -->
+                <div class="breakdown-card p-6 rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-pink-500/20 rounded-lg text-pink-400">
+                            <i class="fas fa-video text-xl"></i>
+                        </div>
+                        <span class="text-xs text-pink-400 font-bold bg-pink-500/10 px-2 py-1 rounded">Video</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-2">Music Video</p>
+                    <p class="text-2xl font-bold mb-3">$<%= (breakdown.musicVideo.amount || 0).toFixed(2) %></p>
+                    <div class="bg-gray-700/50 h-2 rounded-full overflow-hidden">
+                        <div class="bg-pink-500 h-full rounded-full" style="width: <%= breakdown.musicVideo.percentage %>%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2"><%= breakdown.musicVideo.percentage %>% of total</p>
+                </div>
+
+                <!-- Shorts Content -->
+                <div class="breakdown-card p-6 rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-orange-500/20 rounded-lg text-orange-400">
+                            <i class="fas fa-film text-xl"></i>
+                        </div>
+                        <span class="text-xs text-orange-400 font-bold bg-orange-500/10 px-2 py-1 rounded">Shorts</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-2">Shorts Content</p>
+                    <p class="text-2xl font-bold mb-3">$<%= (breakdown.shorts.amount || 0).toFixed(2) %></p>
+                    <div class="bg-gray-700/50 h-2 rounded-full overflow-hidden">
+                        <div class="bg-orange-500 h-full rounded-full" style="width: <%= breakdown.shorts.percentage %>%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2"><%= breakdown.shorts.percentage %>% of total</p>
+                </div>
+
+                <!-- Live Streaming -->
+                <div class="breakdown-card p-6 rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-red-500/20 rounded-lg text-red-400">
+                            <i class="fas fa-circle text-xl"></i>
+                        </div>
+                        <span class="text-xs text-red-400 font-bold bg-red-500/10 px-2 py-1 rounded">Live</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-2">Live Streaming</p>
+                    <p class="text-2xl font-bold mb-3">$<%= (breakdown.live.amount || 0).toFixed(2) %></p>
+                    <div class="bg-gray-700/50 h-2 rounded-full overflow-hidden">
+                        <div class="bg-red-500 h-full rounded-full" style="width: <%= breakdown.live.percentage %>%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2"><%= breakdown.live.percentage %>% of total</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Revenue Summary -->
+        <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-2xl p-8 mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <p class="text-gray-400 text-sm mb-2 uppercase tracking-wide">Total Earnings</p>
+                    <p class="text-4xl font-bold text-purple-400">$<%= (totalEarnings || 0).toFixed(2) %></p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-sm mb-2 uppercase tracking-wide">Current Balance</p>
+                    <p class="text-4xl font-bold text-green-400">$<%= (currentBalance || 0).toFixed(2) %></p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-sm mb-2 uppercase tracking-wide">Revenue Streams</p>
+                    <p class="text-4xl font-bold text-blue-400">4</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal History -->
+        <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+            <div class="p-6 border-b border-white/10">
+                <h3 class="text-xl font-bold flex items-center gap-3">
+                    <i class="fas fa-history text-purple-400"></i>Recent Withdrawals
+                </h3>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-black/30">
+                        <tr class="border-b border-white/10">
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-400">Date</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-400">Reference ID</th>
+                            <th class="px-6 py-4 text-right text-sm font-semibold text-gray-400">Amount</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-400">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (withdrawals && withdrawals.length > 0) { %>
+                            <% withdrawals.forEach(tx => { %>
+                                <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                                    <td class="px-6 py-4 text-sm"><%= new Date(tx.createdAt).toLocaleDateString() %></td>
+                                    <td class="px-6 py-4 text-sm font-mono text-gray-500"><%= tx.id.slice(-8).toUpperCase() %></td>
+                                    <td class="px-6 py-4 text-right font-semibold text-red-400">-$<%= tx.amount.toFixed(2) %></td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase <%= tx.status === 'COMPLETED' ? 'bg-green-500/20 text-green-400' : tx.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400' %>">
+                                            <%= tx.status %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fas fa-inbox text-2xl mb-3 block"></i>
+                                    No withdrawal history yet
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => {
+                        window.location.href = '/';
+                    })
+                    .catch(err => {
+                        console.error('Logout error:', err);
+                        window.location.href = '/';
+                    });
+            }
+        }
+
+        function withdrawFunds() {
+            const balance = <%= currentBalance || 0 %>;
+            if (balance <= 0) {
+                alert('You have no balance to withdraw.');
+                return;
+            }
+            
+            const amount = prompt(`Enter amount to withdraw (Available: $${balance.toFixed(2)}):`, '');
+            if (amount && parseFloat(amount) > 0 && parseFloat(amount) <= balance) {
+                alert(`Withdrawal request for $${parseFloat(amount).toFixed(2)} submitted! It will be processed within 3-5 business days.`);
+                // In future: submit withdrawal request to backend
+            } else if (amount) {
+                alert('Invalid amount. Please enter a valid amount within your balance.');
+            }
+        }
+
+        function viewHistory() {
+            // Scroll to history section
+            document.querySelector('table').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

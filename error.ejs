@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - EchoVault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/pub/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .error-container { background-color: #1a1a1a; border: 1px solid #333; }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen">
+    <div class="error-container p-8 rounded-xl text-center max-w-md w-full">
+        <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+        <h1 class="text-3xl font-bold mb-2">Oops! Something went wrong.</h1>
+        <% if (typeof message !== 'undefined') { %>
+            <p class="text-gray-400 text-lg mb-6"><%= message %></p>
+        <% } else { %>
+            <p class="text-gray-400 text-lg mb-6">An unexpected error occurred. Please try again later.</p>
+        <% } %>
+        <a href="/api/artist/dashboard" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full font-semibold transition">
+            Go to Dashboard
+        </a>
+    </div>
+</body>
+</html>

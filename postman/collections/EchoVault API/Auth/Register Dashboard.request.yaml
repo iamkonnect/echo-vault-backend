@@ -1,0 +1,51 @@
+$kind: http-request
+name: Register Dashboard
+method: POST
+url: '{{baseUrl}}/api/auth/register-dashboard'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "artist@example.com",
+      "password": "password123",
+      "name": "Test Artist",
+      "username": "testartist",
+      "phone": "+1234567890"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201", function () {
+        pm.response.to.have.status(201);
+      });
+      pm.test("Response has success === true", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+        pm.expect(json.success).to.equal(true);
+      });
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has token", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("token");
+        pm.expect(json.token).to.be.a("string");
+        if (json.token) pm.environment.set("token", json.token);
+      });
+      
+      pm.test("Response has user data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("user");
+        pm.expect(json.user).to.have.property("id");
+        pm.expect(json.user).to.have.property("email");
+      });

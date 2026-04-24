@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - EchoVault Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/pub/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .report-card { background-color: #1a1a1a; border: 1px solid #333; transition: all 0.3s ease; }
+        .report-card:hover { border-color: #a855f7; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col">
+        <div class="p-6 text-2xl font-bold text-purple-500">EchoVault</div>
+        <nav class="flex-1 px-4 space-y-2">
+            <a href="/api/admin/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
+                <i class="fas fa-chart-pie mr-3 w-5"></i> Dashboard
+            </a>
+            <a href="/api/admin/payouts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
+                <i class="fas fa-money-check-alt mr-3 w-5"></i> Payouts
+            </a>
+            <a href="/api/admin/reports" class="flex items-center p-3 text-white bg-purple-500/10 border-l-4 border-purple-500 rounded-r-lg">
+                <i class="fas fa-file-alt mr-3 w-5 text-purple-500"></i> Reports
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-800">
+            <form action="/api/auth/logout" method="POST">
+                <button type="submit" class="w-full text-left p-3 text-red-400 hover:text-red-300 transition">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold">Analytics & Reports</h1>
+            <p class="text-gray-400">Gain insights into platform performance and user activity.</p>
+        </div>
+
+        <!-- Report Categories -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <div class="report-card p-6 rounded-xl flex items-center space-x-4">
+                <div class="w-12 h-12 bg-blue-900/30 rounded-full flex items-center justify-center text-blue-400">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">User Growth Report</h3>
+                    <p class="text-sm text-gray-400">Track new artist and user registrations.</p>
+                </div>
+            </div>
+            <div class="report-card p-6 rounded-xl flex items-center space-x-4">
+                <div class="w-12 h-12 bg-green-900/30 rounded-full flex items-center justify-center text-green-400">
+                    <i class="fas fa-chart-bar text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">Content Performance</h3>
+                    <p class="text-sm text-gray-400">Analyze top tracks, videos, and shorts.</p>
+                </div>
+            </div>
+            <div class="report-card p-6 rounded-xl flex items-center space-x-4">
+                <div class="w-12 h-12 bg-red-900/30 rounded-full flex items-center justify-center text-red-400">
+                    <i class="fas fa-dollar-sign text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">Revenue Trends</h3>
+                    <p class="text-sm text-gray-400">Monitor platform earnings and artist payouts.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placeholder for specific report content -->
+        <div class="bg-gray-900/30 rounded-3xl border border-gray-800 p-8 text-center text-gray-500">
+            <i class="fas fa-chart-line text-5xl mb-4 text-gray-700"></i>
+            <p class="text-lg">Select a report category above to view detailed analytics.</p>
+            <p class="text-sm mt-2">Interactive charts and data tables will appear here.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Artist Account | EchoVault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="w-full max-w-md">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600">
+                    🎵 ECHOVAULT
+                </h1>
+                <p class="text-emerald-300 mt-2 font-light">Join the music revolution</p>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="glass p-8 rounded-2xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-white mb-6">Create Artist Account</h2>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <form method="POST" action="/api/auth/register-dashboard" enctype="multipart/form-data" class="space-y-4" id="registerForm">
+                    <!-- Artist Name (Username) -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Artist Name *</label>
+                        <input type="text" name="username" 
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition"
+                            placeholder="Your artist name"
+                            required>
+                        <p class="text-xs text-white/40 mt-1">3+ characters, no spaces</p>
+                    </div>
+
+                    <!-- Display Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Display Name *</label>
+                        <input type="text" name="name" 
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition"
+                            placeholder="Your full name"
+                            required>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Email *</label>
+                        <input type="email" name="email" 
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition"
+                            placeholder="your@email.com"
+                            required>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Phone Number</label>
+                        <input type="tel" name="phone" 
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition"
+                            placeholder="+1 (555) 123-4567">
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Password *</label>
+                        <input type="password" name="password" id="password"
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition"
+                            placeholder="Create a strong password"
+                            required>
+                        <p class="text-xs text-white/40 mt-1">At least 6 characters</p>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Confirm Password *</label>
+                        <input type="password" name="confirmPassword" id="confirmPassword"
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition"
+                            placeholder="Confirm your password"
+                            required>
+                        <p class="text-xs text-white/40 mt-1" id="passwordMatch"></p>
+                    </div>
+
+                    <!-- Profile Picture -->
+                    <div>
+                        <label class="block text-sm font-medium text-emerald-300 mb-2">Profile Picture</label>
+                        <input type="file" name="profilePicture" accept="image/*"
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/40 focus:border-emerald-500 focus:bg-white/5 transition text-sm"
+                            id="profilePicture">
+                        <p class="text-xs text-white/40 mt-1">JPG, PNG (Max 5MB)</p>
+                        <div id="previewContainer" class="mt-3 hidden">
+                            <img id="preview" class="w-20 h-20 rounded-lg object-cover">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg transition transform hover:scale-105 mt-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Create Account
+                    </button>
+                </form>
+
+                <!-- Already have account -->
+                <p class="text-center text-white/60 mt-6 text-sm">
+                    Already have an account? 
+                    <a href="/" class="text-emerald-400 hover:text-emerald-300 font-semibold">Login here</a>
+                </p>
+            </div>
+
+            <!-- Footer Note -->
+            <p class="text-center text-white/40 text-xs mt-8">
+                By creating an account, you agree to our Terms of Service and Privacy Policy
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Real-time password matching validation
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordMatchMsg = document.getElementById('passwordMatch');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (confirmPassword.length === 0) {
+                passwordMatchMsg.textContent = '';
+                submitBtn.disabled = false;
+                confirmPasswordInput.classList.remove('border-red-500', 'border-emerald-500');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                passwordMatchMsg.textContent = '❌ Passwords do not match';
+                passwordMatchMsg.classList.add('text-red-400');
+                passwordMatchMsg.classList.remove('text-emerald-400');
+                confirmPasswordInput.classList.add('border-red-500');
+                confirmPasswordInput.classList.remove('border-emerald-500');
+                submitBtn.disabled = true;
+            } else {
+                passwordMatchMsg.textContent = '✓ Passwords match';
+                passwordMatchMsg.classList.add('text-emerald-400');
+                passwordMatchMsg.classList.remove('text-red-400');
+                confirmPasswordInput.classList.add('border-emerald-500');
+                confirmPasswordInput.classList.remove('border-red-500');
+                submitBtn.disabled = false;
+            }
+        }
+
+        passwordInput.addEventListener('input', checkPasswordMatch);
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        // Preview profile picture
+        document.getElementById('profilePicture').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    this.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('preview');
+                    preview.src = event.target.result;
+                    document.getElementById('previewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form validation on submit
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const username = document.querySelector('input[name="username"]').value.trim();
+            const email = document.querySelector('input[name="email"]').value.trim();
+            const password = document.querySelector('input[name="password"]').value;
+            const confirmPassword = document.querySelector('input[name="confirmPassword"]').value;
+
+            if (username.length < 3) {
+                e.preventDefault();
+                alert('Artist name must be at least 3 characters');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9_]*$/.test(username)) {
+                e.preventDefault();
+                alert('Artist name can only contain letters, numbers, and underscores (no spaces)');
+                return;
+            }
+
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match');
+                return;
+            }
+
+            if (!email.includes('@')) {
+                e.preventDefault();
+                alert('Please enter a valid email');
+                return;
+            }
+        });
+    </script>
+</body>
+</html>

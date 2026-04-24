@@ -1,0 +1,34 @@
+$kind: http-request
+name: Platform Withdraw
+method: POST
+url: '{{baseUrl}}/api/admin/platform-withdraw'
+order: 10000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{adminToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "amount": 1000.00,
+      "bankAccount": "1234567890",
+      "bankName": "First National Bank"
+    }
+
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

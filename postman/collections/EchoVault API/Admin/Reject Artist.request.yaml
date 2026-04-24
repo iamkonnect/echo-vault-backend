@@ -1,0 +1,26 @@
+$kind: http-request
+name: Reject Artist
+method: POST
+url: '{{baseUrl}}/api/admin/artist/:id/reject'
+order: 7000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{adminToken}}'
+pathVariables:
+  - key: id
+    value: ''
+
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

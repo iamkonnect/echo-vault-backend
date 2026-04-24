@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Artist Verification - EchoVault Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 1rem; 
+        }
+        .admin-sidebar { 
+            background: rgba(15, 12, 41, 0.8); 
+            backdrop-filter: blur(10px);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        
+        .artist-card { 
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(48, 43, 99, 0.1)); 
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .artist-card:hover {
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .artist-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn-verify {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-reject {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .btn-reject:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #e5e7eb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+                
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-12 overflow-y-auto">
+        <!-- Header -->
+        <div class="mb-12">
+            <h1 class="text-5xl font-black mb-2">
+                <i class="fas fa-star text-amber-400"></i> Artist Verification Queue
+            </h1>
+            <p class="text-white/60 text-lg">Review and approve new artists joining the platform</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="glass p-6 border border-amber-500/20 hover:border-amber-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-amber-500/20 rounded-xl"><i class="fas fa-hourglass-half text-amber-400"></i></span>
+                    <span class="text-amber-400 text-sm font-bold">Pending</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Pending Verification</p>
+                <p class="text-4xl font-black"><%= artists.length %></p>
+            </div>
+
+            <div class="glass p-6 border border-blue-500/20 hover:border-blue-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-blue-500/20 rounded-xl"><i class="fas fa-music text-blue-400"></i></span>
+                    <span class="text-blue-400 text-sm font-bold">Content</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Total Content</p>
+                <p class="text-4xl font-black">
+                    <%= artists.reduce((sum, a) => sum + (a.contentCount || 0), 0) %>
+                </p>
+            </div>
+
+            <div class="glass p-6 border border-green-500/20 hover:border-green-400/40 transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="p-2 bg-green-500/20 rounded-xl"><i class="fas fa-gift text-green-400"></i></span>
+                    <span class="text-green-400 text-sm font-bold">Gifts</span>
+                </div>
+                <p class="text-sm text-white/50 mb-2 uppercase tracking-wide">Total Gifts Received</p>
+                <p class="text-4xl font-black">
+                    <%= artists.reduce((sum, a) => sum + (a.giftCount || 0), 0) %>
+                </p>
+            </div>
+        </div>
+
+        <!-- Artists List -->
+        <% if (artists && artists.length > 0) { %>
+            <div class="space-y-4">
+                <% artists.forEach((artist, index) => { %>
+                    <div class="artist-card glass p-6 rounded-lg">
+                        <div class="flex items-start justify-between gap-6">
+                            <!-- Left: Artist Info -->
+                            <div class="flex-1">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="artist-avatar">
+                                        <%= artist.name.charAt(0).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-white"><%= artist.name %></h3>
+                                        <p class="text-white/60 text-sm">@<%= artist.username || artist.email.split('@')[0] %></p>
+                                    </div>
+                                </div>
+
+                                <!-- Artist Details -->
+                                <div class="grid grid-cols-3 gap-3 mb-4">
+                                    <div>
+                                        <p class="text-white/40 text-xs uppercase tracking-wide mb-1">Email</p>
+                                        <p class="text-sm text-white/70"><%= artist.email %></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-white/40 text-xs uppercase tracking-wide mb-1">Joined</p>
+                                        <p class="text-sm text-white/70"><%= new Date(artist.createdAt).toLocaleDateString() %></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-white/40 text-xs uppercase tracking-wide mb-1">Status</p>
+                                        <p class="text-sm text-amber-400 font-semibold">⏳ Pending</p>
+                                    </div>
+                                </div>
+
+                                <!-- Artist Stats -->
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="stat-badge">
+                                        <i class="fas fa-music"></i>
+                                        <%= artist.contentCount || 0 %> Content
+                                    </span>
+                                    <span class="stat-badge">
+                                        <i class="fas fa-gift"></i>
+                                        <%= artist.giftCount || 0 %> Gifts
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Action Buttons -->
+                            <div class="flex gap-2 flex-col">
+                                <button class="btn-verify" onclick="verifyArtist('<%= artist.id %>', '<%= artist.name %>')">
+                                    <i class="fas fa-check-circle"></i> Approve
+                                </button>
+                                <button class="btn-reject" onclick="rejectArtist('<%= artist.id %>', '<%= artist.name %>')">
+                                    <i class="fas fa-times-circle"></i> Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="glass p-16 text-center rounded-lg">
+                <div class="empty-state">
+                    <i class="fas fa-check-double text-green-400"></i>
+                    <h3 class="text-2xl font-bold mb-2 mt-4">All Caught Up!</h3>
+                    <p class="text-white/60">All pending artists have been reviewed and verified.</p>
+                </div>
+            </div>
+        <% } %>
+    </main>
+
+    <script>
+        async function verifyArtist(artistId, artistName) {
+            if (confirm(`✅ Approve "${artistName}" as a verified artist?`)) {
+                try {
+                    const response = await fetch(`/api/admin/verify-artist/${artistId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert(`✅ ${artistName} has been verified and approved!`);
+                        location.reload();
+                    } else {
+                        alert(`❌ Error: ${result.message}`);
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    alert('❌ Could not verify artist. Server error.');
+                }
+            }
+        }
+
+        async function rejectArtist(artistId, artistName) {
+            const reason = prompt(`Reason for rejecting "${artistName}"?`);
+            if (reason !== null) {
+                try {
+                    const response = await fetch(`/api/admin/reject-artist/${artistId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert(`Rejection recorded for ${artistName}`);
+                        location.reload();
+                    } else {
+                        alert(`❌ Error: ${result.message}`);
+                    }
+                } catch (error) {
+                    console.error('Rejection error:', error);
+                    alert('❌ Could not reject artist. Server error.');
+                }
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout error:', err));
+            }
+        }
+    </script>
+</body>
+</html>

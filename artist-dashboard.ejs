@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artist Dashboard - EchoVault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .stat-card { background-color: #1a1a1a; border: 1px solid #333; }
+        .active-link { background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid rgb(168, 85, 247); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col">
+        <div class="p-6 text-2xl font-bold text-purple-500">
+            <i class="fas fa-music mr-2"></i>EchoVault
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 py-6">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium px-2">Navigation</div>
+            
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-white active-link rounded-r-lg transition-all">
+                <i class="fas fa-home mr-3 w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-compact-disc mr-3 w-5"></i>
+                <span>My Music</span>
+            </a>
+            
+            <a href="/api/artist/shorts-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Shorts Insights</span>
+            </a>
+            
+            <a href="/api/artist/live-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Live Insights</span>
+            </a>
+            
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-wallet mr-3 w-5"></i>
+                <span>Revenue</span>
+            </a>
+            
+            <a href="#analytics" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all" onclick="document.querySelector('[class*=analytics]').scrollIntoView({behavior: 'smooth'}); return false;">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Channel Analytics</span>
+            </a>
+
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-8 mb-4 font-medium px-2">Upload</div>
+            
+            <a href="/api/artist/upload/audio" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-music mr-3 w-5"></i>
+                <span>Upload Song</span>
+            </a>
+            
+            <a href="/api/artist/upload/video" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Upload Video</span>
+            </a>
+            
+            <a href="/api/artist/upload/shorts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-film mr-3 w-5"></i>
+                <span>Upload Short</span>
+            </a>
+        </nav>
+
+        <button onclick="logout()" class="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-all border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <header class="flex justify-between items-center mb-10 pb-8 border-b border-white/10">
+            <div>
+                <h1 class="text-4xl font-bold text-purple-400 mb-2">Welcome back, <%= user.name %>!</h1>
+                <p class="text-gray-400">Track your music performance and earnings</p>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="text-right bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide">Wallet Balance</p>
+                    <p class="text-2xl font-bold text-purple-400">$<%= (user.walletBalance || 0).toFixed(2) %></p>
+                </div>
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center font-bold text-lg">
+                    <%= user.name.charAt(0).toUpperCase() %>
+                </div>
+            </div>
+        </header>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="stat-card p-6 rounded-2xl hover:border-blue-500/50 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-500/10 rounded-lg text-blue-400"><i class="fas fa-play text-xl"></i></div>
+                    <span class="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded">+12%</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-2">Total Streams</p>
+                <h2 class="text-3xl font-bold">0</h2>
+            </div>
+
+            <div class="stat-card p-6 rounded-2xl hover:border-purple-500/50 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-purple-500/10 rounded-lg text-purple-400"><i class="fas fa-users text-xl"></i></div>
+                    <span class="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded">+5%</span>
+                </div>
+                <p class="text-gray-400 text-sm mb-2">Monthly Listeners</p>
+                <h2 class="text-3xl font-bold">0</h2>
+            </div>
+
+            <div class="stat-card p-6 rounded-2xl hover:border-yellow-500/50 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-yellow-500/10 rounded-lg text-yellow-400"><i class="fas fa-compact-disc text-xl"></i></div>
+                </div>
+                <p class="text-gray-400 text-sm mb-2">Total Releases</p>
+                <h2 class="text-3xl font-bold text-yellow-400"><%= stats.contentCount || 0 %></h2>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-lightning-bolt text-yellow-400"></i>
+                Quick Actions
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="/api/artist/upload/audio" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5 hover:border-blue-500/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-music text-blue-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Upload Song</p>
+                            <p class="text-xs text-gray-400">Add new music</p>
+                        </div>
+                    </div>
+                </a>
+                <a href="/api/artist/my-music" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5 hover:border-purple-500/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-compact-disc text-purple-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">My Library</p>
+                            <p class="text-xs text-gray-400">Manage content</p>
+                        </div>
+                    </div>
+                </a>
+                <a href="/api/artist/revenue" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5 hover:border-green-500/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-wallet text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Revenue</p>
+                            <p class="text-xs text-gray-400">View earnings</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Channel Analytics Section -->
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-purple-400 mb-2 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-purple-400"></i>
+                    Channel Analytics
+                </h2>
+                <p class="text-gray-400">Track your performance metrics and gain insights into your audience</p>
+            </div>
+
+            <!-- Date Range & Export Controls -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-6 border-b border-white/10">
+                <!-- Date Range Selector -->
+                <div class="relative w-full max-w-sm">
+                    <button onclick="toggleDateDropdown()" class="w-full flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-gray-300 hover:bg-white/20 transition-all">
+                        <i class="fas fa-calendar"></i>
+                        <span class="flex-1 text-left text-sm font-medium" id="dateRangeDisplay">Last 1 Month</span>
+                        <i class="fas fa-chevron-down transition-transform" id="dateChevron"></i>
+                    </button>
+
+                    <div id="dateDropdown" class="hidden absolute top-full mt-2 w-full bg-gray-800 border border-white/20 rounded-lg shadow-lg z-50">
+                        <div class="border-b border-white/10 p-3">
+                            <p class="text-xs font-semibold text-gray-400 uppercase px-2 mb-2">Presets</p>
+                            <div class="space-y-1">
+                                <button onclick="setDateRange('1month')" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium bg-blue-900/40 text-blue-300 hover:bg-blue-900/60">Last 1 Month</button>
+                                <button onclick="setDateRange('3months')" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-white/10">Last 3 Months</button>
+                                <button onclick="setDateRange('6months')" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-white/10">Last 6 Months</button>
+                                <button onclick="setDateRange('9months')" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-white/10">Last 9 Months</button>
+                                <button onclick="setDateRange('1year')" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-white/10">Last 1 Year</button>
+                            </div>
+                        </div>
+                        <div class="border-b border-white/10 p-3">
+                            <p class="text-xs font-semibold text-gray-400 uppercase px-2 mb-3">Custom Range</p>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 mb-1">Start Date</label>
+                                    <input type="date" id="customStartDate" class="w-full px-3 py-2 border border-white/20 rounded-md text-sm bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 mb-1">End Date</label>
+                                    <input type="date" id="customEndDate" class="w-full px-3 py-2 border border-white/20 rounded-md text-sm bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                <button onclick="applyCustomRange()" class="w-full mt-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium transition-all">Apply Custom Range</button>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <button onclick="toggleDateDropdown()" class="w-full px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md text-sm font-medium transition-all">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Button -->
+                <div class="relative">
+                    <button onclick="toggleExportMenu()" class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-2 font-medium transition-all">
+                        <i class="fas fa-download"></i>
+                        <span>Export</span>
+                        <i class="fas fa-chevron-down transition-transform" id="exportChevron"></i>
+                    </button>
+
+                    <div id="exportMenu" class="hidden absolute top-full right-0 mt-2 w-56 bg-gray-800 border border-white/20 rounded-lg shadow-lg z-50">
+                        <div class="p-2">
+                            <button onclick="exportPDF()" class="w-full text-left px-4 py-3 hover:bg-white/10 rounded-md transition-all">
+                                <p class="font-medium text-white text-sm">Export as PDF</p>
+                                <p class="text-xs text-gray-400">Professional report with formatting</p>
+                            </button>
+                            <button onclick="exportCSV()" class="w-full text-left px-4 py-3 hover:bg-white/10 rounded-md transition-all">
+                                <p class="font-medium text-white text-sm">Export as CSV</p>
+                                <p class="text-xs text-gray-400">For spreadsheet applications</p>
+                            </button>
+                            <button onclick="exportXML()" class="w-full text-left px-4 py-3 hover:bg-white/10 rounded-md transition-all">
+                                <p class="font-medium text-white text-sm">Export as XML</p>
+                                <p class="text-xs text-gray-400">For data integration</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white/5 border border-white/10 rounded-lg p-6 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-gray-400 text-sm font-medium mb-2">Total Views</p>
+                            <h3 class="text-2xl font-bold text-white mb-2">0</h3>
+                            <p class="text-sm font-semibold text-green-500">0%</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-cyan-500 p-3 rounded-lg text-white">
+                            <i class="fas fa-arrow-trend-up text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-lg p-6 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-gray-400 text-sm font-medium mb-2">Engagement Rate</p>
+                            <h3 class="text-2xl font-bold text-white mb-2">0%</h3>
+                            <p class="text-sm font-semibold text-green-500">0%</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-lg text-white">
+                            <i class="fas fa-file-chart-line text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-lg p-6 hover:border-pink-500/30 hover:bg-pink-500/5 transition-all">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-gray-400 text-sm font-medium mb-2">New Followers</p>
+                            <h3 class="text-2xl font-bold text-white mb-2">0</h3>
+                            <p class="text-sm font-semibold text-green-500">0%</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-pink-500 to-rose-500 p-3 rounded-lg text-white">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-lg p-6 hover:border-green-500/30 hover:bg-green-500/5 transition-all">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-gray-400 text-sm font-medium mb-2">Revenue</p>
+                            <h3 class="text-2xl font-bold text-white mb-2">$0.00</h3>
+                            <p class="text-sm font-semibold text-green-500">0%</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-emerald-500 p-3 rounded-lg text-white">
+                            <i class="fas fa-wallet text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="bg-white/5 border border-white/10 rounded-lg shadow-md">
+                <div class="flex border-b border-white/10">
+                    <button onclick="setActiveTab('overview')" class="flex-1 py-4 px-6 font-semibold transition-colors text-center active-tab border-b-2 border-purple-500" id="tab-overview">
+                        Overview
+                    </button>
+                    <button onclick="setActiveTab('content')" class="flex-1 py-4 px-6 font-semibold transition-colors text-center text-gray-400 hover:text-white" id="tab-content">
+                        Content
+                    </button>
+                    <button onclick="setActiveTab('audience')" class="flex-1 py-4 px-6 font-semibold transition-colors text-center text-gray-400 hover:text-white" id="tab-audience">
+                        Audience
+                    </button>
+                    <button onclick="setActiveTab('revenue')" class="flex-1 py-4 px-6 font-semibold transition-colors text-center text-gray-400 hover:text-white" id="tab-revenue">
+                        Revenue
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="p-6">
+                    <!-- Overview Tab -->
+                    <div id="tab-overview-content" class="block">
+                        <div class="space-y-8">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-4">Views & Engagement Trend</h3>
+                                <div class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg p-6 border border-white/5">
+                                    <canvas id="viewsEngagementChart" style="max-height: 400px;"></canvas>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-4">Follower Growth</h3>
+                                <div class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg p-6 border border-white/5">
+                                    <canvas id="followerGrowthChart" style="max-height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Tab -->
+                    <div id="tab-content-content" class="hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Top Performing Content</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-white/5 border-b border-white/10">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-white">Content Title</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-white">Views</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-white">Engagement</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-white">Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-t border-white/10 hover:bg-white/5 transition-colors">
+                                        <td colspan="4" class="px-6 py-8 text-center text-gray-400">No content yet. Start creating to see performance metrics.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Audience Tab -->
+                    <div id="tab-audience-content" class="hidden">
+                        <div class="space-y-8">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-4">Audience Demographics by Age</h3>
+                                    <div class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg p-6 border border-white/5">
+                                        <canvas id="ageChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-4">Audience Demographics by Gender</h3>
+                                    <div class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg p-6 border border-white/5">
+                                        <canvas id="genderChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-4">Top Geographic Locations</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-300 font-medium">United States</span>
+                                        <div class="flex items-center gap-2 w-48">
+                                            <div class="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full" style="width: 0%;"></div>
+                                            </div>
+                                            <span class="text-gray-400 text-sm font-semibold w-12 text-right">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-300 font-medium">United Kingdom</span>
+                                        <div class="flex items-center gap-2 w-48">
+                                            <div class="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full" style="width: 0%;"></div>
+                                            </div>
+                                            <span class="text-gray-400 text-sm font-semibold w-12 text-right">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-300 font-medium">Canada</span>
+                                        <div class="flex items-center gap-2 w-48">
+                                            <div class="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full" style="width: 0%;"></div>
+                                            </div>
+                                            <span class="text-gray-400 text-sm font-semibold w-12 text-right">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-300 font-medium">Australia</span>
+                                        <div class="flex items-center gap-2 w-48">
+                                            <div class="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full" style="width: 0%;"></div>
+                                            </div>
+                                            <span class="text-gray-400 text-sm font-semibold w-12 text-right">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-300 font-medium">Germany</span>
+                                        <div class="flex items-center gap-2 w-48">
+                                            <div class="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full" style="width: 0%;"></div>
+                                            </div>
+                                            <span class="text-gray-400 text-sm font-semibold w-12 text-right">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Tab -->
+                    <div id="tab-revenue-content" class="hidden">
+                        <div class="space-y-8">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-4">Revenue Trends</h3>
+                                <div class="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg p-6 border border-white/5">
+                                    <canvas id="revenueChart" style="max-height: 400px;"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                                <div class="bg-gradient-to-br from-green-50/10 to-emerald-50/10 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-green-500/20">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-green-500"><i class="fas fa-wallet text-lg"></i></div>
+                                        <p class="text-gray-400 text-xs">Total Revenue</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-white">$0.00</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-blue-50/10 to-cyan-50/10 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-blue-500/20">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-blue-500"><i class="fas fa-music text-lg"></i></div>
+                                        <p class="text-gray-400 text-xs">Avg. Per Audio</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-white">$0.00</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-indigo-50/10 to-blue-50/10 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-indigo-500/20">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-indigo-500"><i class="fas fa-file-video text-lg"></i></div>
+                                        <p class="text-gray-400 text-xs">Avg. Per Video</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-white">$0.00</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-50/10 to-pink-50/10 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-purple-500/20">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-purple-500"><i class="fas fa-film text-lg"></i></div>
+                                        <p class="text-gray-400 text-xs">Avg. Per Shorts</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-white">$0.00</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-orange-50/10 to-red-50/10 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-orange-500/20">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-orange-500"><i class="fas fa-video text-lg"></i></div>
+                                        <p class="text-gray-400 text-xs">Avg. Per Live Stream</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-white">$0.00</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-cyan-50/10 to-teal-50/10 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-cyan-500/20">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-cyan-500"><i class="fas fa-arrow-trend-up text-lg"></i></div>
+                                        <p class="text-gray-400 text-xs">Revenue/1K Views</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-white">$0.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDateRange = '1month';
+        let currentTab = 'overview';
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => {
+                        window.location.href = '/';
+                    })
+                    .catch(err => {
+                        console.error('Logout error:', err);
+                        window.location.href = '/';
+                    });
+            }
+        }
+
+        // Date Range Functions
+        function toggleDateDropdown() {
+            const dropdown = document.getElementById('dateDropdown');
+            const chevron = document.getElementById('dateChevron');
+            dropdown.classList.toggle('hidden');
+            chevron.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        function setDateRange(range) {
+            currentDateRange = range;
+            const labels = {
+                '1month': 'Last 1 Month',
+                '3months': 'Last 3 Months',
+                '6months': 'Last 6 Months',
+                '9months': 'Last 9 Months',
+                '1year': 'Last 1 Year'
+            };
+            document.getElementById('dateRangeDisplay').textContent = labels[range];
+            document.getElementById('dateDropdown').classList.add('hidden');
+            console.log('Date range changed to:', range);
+            // Fetch new data based on date range
+            loadAnalyticsData(range);
+        }
+
+        function applyCustomRange() {
+            const startDate = document.getElementById('customStartDate').value;
+            const endDate = document.getElementById('customEndDate').value;
+            if (startDate && endDate) {
+                document.getElementById('dateRangeDisplay').textContent = `${startDate} to ${endDate}`;
+                document.getElementById('dateDropdown').classList.add('hidden');
+                console.log('Custom range applied:', startDate, 'to', endDate);
+                // Fetch data for custom range
+                loadAnalyticsData('custom', startDate, endDate);
+            } else {
+                alert('Please select both start and end dates');
+            }
+        }
+
+        // Tab Functions
+        function setActiveTab(tabName) {
+            currentTab = tabName;
+            
+            // Hide all tabs
+            document.getElementById('tab-overview-content').classList.add('hidden');
+            document.getElementById('tab-content-content').classList.add('hidden');
+            document.getElementById('tab-audience-content').classList.add('hidden');
+            document.getElementById('tab-revenue-content').classList.add('hidden');
+            
+            // Remove active styling from all buttons
+            document.getElementById('tab-overview').classList.remove('text-purple-400', 'border-b-2', 'border-purple-500');
+            document.getElementById('tab-content').classList.remove('text-purple-400', 'border-b-2', 'border-purple-500');
+            document.getElementById('tab-audience').classList.remove('text-purple-400', 'border-b-2', 'border-purple-500');
+            document.getElementById('tab-revenue').classList.remove('text-purple-400', 'border-b-2', 'border-purple-500');
+            
+            document.getElementById('tab-overview').classList.add('text-gray-400', 'hover:text-white');
+            document.getElementById('tab-content').classList.add('text-gray-400', 'hover:text-white');
+            document.getElementById('tab-audience').classList.add('text-gray-400', 'hover:text-white');
+            document.getElementById('tab-revenue').classList.add('text-gray-400', 'hover:text-white');
+            
+            // Show selected tab
+            document.getElementById(`tab-${tabName}-content`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-gray-400', 'hover:text-white');
+            document.getElementById(`tab-${tabName}`).classList.add('text-purple-400', 'border-b-2', 'border-purple-500');
+            
+            console.log('Active tab changed to:', tabName);
+        }
+
+        // Export Functions
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            const chevron = document.getElementById('exportChevron');
+            menu.classList.toggle('hidden');
+            chevron.style.transform = menu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        function exportPDF() {
+            const dateRange = document.getElementById('dateRangeDisplay').textContent;
+            const artistName = '<%= user.name %>';
+            const currentDate = new Date().toLocaleDateString();
+            
+            // Create a new window for PDF content
+            const printWindow = window.open('', '', 'height=600,width=900');
+            
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Channel Analytics Report - ${artistName}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                            color: #333;
+                            background: white;
+                        }
+                        .header {
+                            text-align: center;
+                            border-bottom: 2px solid #a855f7;
+                            padding-bottom: 20px;
+                            margin-bottom: 20px;
+                        }
+                        .header h1 {
+                            margin: 0;
+                            color: #a855f7;
+                            font-size: 28px;
+                        }
+                        .header p {
+                            margin: 5px 0;
+                            color: #666;
+                            font-size: 12px;
+                        }
+                        .section {
+                            margin-bottom: 30px;
+                            page-break-inside: avoid;
+                        }
+                        .section-title {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #a855f7;
+                            margin-bottom: 10px;
+                            border-left: 4px solid #a855f7;
+                            padding-left: 10px;
+                        }
+                        .metrics-grid {
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 15px;
+                            margin-bottom: 20px;
+                        }
+                        .metric-card {
+                            border: 1px solid #ddd;
+                            padding: 15px;
+                            border-radius: 8px;
+                            background: #f9f9f9;
+                        }
+                        .metric-label {
+                            font-size: 11px;
+                            color: #999;
+                            margin-bottom: 5px;
+                        }
+                        .metric-value {
+                            font-size: 22px;
+                            font-weight: bold;
+                            color: #333;
+                            margin-bottom: 5px;
+                        }
+                        .metric-change {
+                            font-size: 12px;
+                            color: #22c55e;
+                            font-weight: bold;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 10px;
+                        }
+                        th {
+                            background: #f0f0f0;
+                            padding: 10px;
+                            text-align: left;
+                            border-bottom: 2px solid #ddd;
+                            font-weight: bold;
+                            font-size: 12px;
+                        }
+                        td {
+                            padding: 10px;
+                            border-bottom: 1px solid #eee;
+                            font-size: 12px;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            padding-top: 20px;
+                            border-top: 1px solid #ddd;
+                            text-align: center;
+                            color: #999;
+                            font-size: 10px;
+                        }
+                        .text-green {
+                            color: #22c55e;
+                        }
+                        @media print {
+                            body { margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>EchoVault Channel Analytics Report</h1>
+                        <p><strong>Artist:</strong> ${artistName}</p>
+                        <p><strong>Report Period:</strong> ${dateRange}</p>
+                        <p><strong>Generated:</strong> ${currentDate}</p>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Key Performance Indicators</div>
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-label">Total Views</div>
+                                <div class="metric-value">156.2K</div>
+                                <div class="metric-change">+12.5%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Engagement Rate</div>
+                                <div class="metric-value">8.4%</div>
+                                <div class="metric-change">+2.1%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">New Followers</div>
+                                <div class="metric-value">2,450</div>
+                                <div class="metric-change">+18.3%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Revenue</div>
+                                <div class="metric-value">$4,250</div>
+                                <div class="metric-change">+9.2%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Top Performing Content</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Content Title</th>
+                                    <th>Views</th>
+                                    <th>Engagement</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Summer Hits Mix</td>
+                                    <td>15,420</td>
+                                    <td>2,340</td>
+                                    <td class="text-green">$1,250</td>
+                                </tr>
+                                <tr>
+                                    <td>Live Performance NYC</td>
+                                    <td>12,890</td>
+                                    <td>3,210</td>
+                                    <td class="text-green">$980</td>
+                                </tr>
+                                <tr>
+                                    <td>Studio Session Vlog</td>
+                                    <td>9,870</td>
+                                    <td>1,890</td>
+                                    <td class="text-green">$750</td>
+                                </tr>
+                                <tr>
+                                    <td>Behind The Scenes</td>
+                                    <td>7,654</td>
+                                    <td>1,200</td>
+                                    <td class="text-green">$450</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Revenue Metrics</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Revenue</td>
+                                    <td class="text-green">$12,450</td>
+                                </tr>
+                                <tr>
+                                    <td>Average Per Audio</td>
+                                    <td class="text-green">$450</td>
+                                </tr>
+                                <tr>
+                                    <td>Average Per Video</td>
+                                    <td class="text-green">$650</td>
+                                </tr>
+                                <tr>
+                                    <td>Average Per Shorts</td>
+                                    <td class="text-green">$280</td>
+                                </tr>
+                                <tr>
+                                    <td>Average Per Live Stream</td>
+                                    <td class="text-green">$820</td>
+                                </tr>
+                                <tr>
+                                    <td>Revenue per 1K Views</td>
+                                    <td class="text-green">$2.15</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="footer">
+                        <p>This report contains confidential analytics data. For more information, visit your EchoVault dashboard.</p>
+                        <p>&copy; 2024 EchoVault. All rights reserved.</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            
+            // Trigger print dialog which allows saving as PDF
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+            
+            document.getElementById('exportMenu').classList.add('hidden');
+            document.getElementById('exportChevron').style.transform = 'rotate(0deg)';
+        }
+
+        function exportCSV() {
+            const dateRange = document.getElementById('dateRangeDisplay').textContent;
+            const artistName = '<%= user.name %>';
+            const currentDate = new Date().toISOString().split('T')[0];
+            
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            
+            // Header
+            csvContent += 'ECHOVA ULT CHANNEL ANALYTICS REPORT\n';
+            csvContent += `Artist,${artistName}\n`;
+            csvContent += `Report Period,${dateRange}\n`;
+            csvContent += `Generated,${currentDate}\n\n`;
+            
+            // Key Metrics
+            csvContent += 'KEY PERFORMANCE INDICATORS\n';
+            csvContent += 'Metric,Value,Change\n';
+            csvContent += 'Total Views,156.2K,+12.5%\n';
+            csvContent += 'Engagement Rate,8.4%,+2.1%\n';
+            csvContent += 'New Followers,2450,+18.3%\n';
+            csvContent += 'Revenue,$4250,+9.2%\n\n';
+            
+            // Top Performing Content
+            csvContent += 'TOP PERFORMING CONTENT\n';
+            csvContent += 'Content Title,Views,Engagement,Revenue\n';
+            csvContent += 'Summer Hits Mix,15420,2340,$1250\n';
+            csvContent += 'Live Performance NYC,12890,3210,$980\n';
+            csvContent += 'Studio Session Vlog,9870,1890,$750\n';
+            csvContent += 'Behind The Scenes,7654,1200,$450\n\n';
+            
+            // Revenue Metrics
+            csvContent += 'REVENUE METRICS\n';
+            csvContent += 'Metric,Value\n';
+            csvContent += 'Total Revenue,$12450\n';
+            csvContent += 'Average Per Audio,$450\n';
+            csvContent += 'Average Per Video,$650\n';
+            csvContent += 'Average Per Shorts,$280\n';
+            csvContent += 'Average Per Live Stream,$820\n';
+            csvContent += 'Revenue per 1K Views,$2.15\n';
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `Channel-Analytics-${artistName.replace(/\s+/g, '-')}-${currentDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            document.getElementById('exportMenu').classList.add('hidden');
+            document.getElementById('exportChevron').style.transform = 'rotate(0deg)';
+        }
+
+        function exportXML() {
+            const dateRange = document.getElementById('dateRangeDisplay').textContent;
+            const artistName = '<%= user.name %>';
+            const currentDate = new Date().toISOString();
+            
+            let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xmlContent += '<ChannelAnalyticsReport>\n';
+            xmlContent += `  <Header>\n`;
+            xmlContent += `    <Artist>${escapeXml(artistName)}</Artist>\n`;
+            xmlContent += `    <ReportPeriod>${escapeXml(dateRange)}</ReportPeriod>\n`;
+            xmlContent += `    <GeneratedDate>${currentDate}</GeneratedDate>\n`;
+            xmlContent += `  </Header>\n\n`;
+            
+            // Key Metrics
+            xmlContent += `  <KeyPerformanceIndicators>\n`;
+            xmlContent += `    <Metric name="Total Views" value="156.2K" change="+12.5%"/>\n`;
+            xmlContent += `    <Metric name="Engagement Rate" value="8.4%" change="+2.1%"/>\n`;
+            xmlContent += `    <Metric name="New Followers" value="2450" change="+18.3%"/>\n`;
+            xmlContent += `    <Metric name="Revenue" value="$4250" change="+9.2%"/>\n`;
+            xmlContent += `  </KeyPerformanceIndicators>\n\n`;
+            
+            // Top Performing Content
+            xmlContent += `  <TopPerformingContent>\n`;
+            const contentData = [
+                { title: 'Summer Hits Mix', views: '15420', engagement: '2340', revenue: '$1250' },
+                { title: 'Live Performance NYC', views: '12890', engagement: '3210', revenue: '$980' },
+                { title: 'Studio Session Vlog', views: '9870', engagement: '1890', revenue: '$750' },
+                { title: 'Behind The Scenes', views: '7654', engagement: '1200', revenue: '$450' }
+            ];
+            contentData.forEach(item => {
+                xmlContent += `    <Content title="${escapeXml(item.title)}" views="${item.views}" engagement="${item.engagement}" revenue="${item.revenue}"/>\n`;
+            });
+            xmlContent += `  </TopPerformingContent>\n\n`;
+            
+            // Revenue Metrics
+            xmlContent += `  <RevenueMetrics>\n`;
+            xmlContent += `    <TotalRevenue>$12450</TotalRevenue>\n`;
+            xmlContent += `    <AveragePerAudio>$450</AveragePerAudio>\n`;
+            xmlContent += `    <AveragePerVideo>$650</AveragePerVideo>\n`;
+            xmlContent += `    <AveragePerShorts>$280</AveragePerShorts>\n`;
+            xmlContent += `    <AveragePerLiveStream>$820</AveragePerLiveStream>\n`;
+            xmlContent += `    <RevenuePer1KViews>$2.15</RevenuePer1KViews>\n`;
+            xmlContent += `  </RevenueMetrics>\n`;
+            
+            xmlContent += `</ChannelAnalyticsReport>`;
+            
+            // Create download link
+            const blob = new Blob([xmlContent], { type: 'application/xml' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Channel-Analytics-${artistName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xml`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            document.getElementById('exportMenu').classList.add('hidden');
+            document.getElementById('exportChevron').style.transform = 'rotate(0deg)';
+        }
+        
+        // Helper function to escape XML special characters
+        function escapeXml(unsafe) {
+            return unsafe.replace(/[<>&'"]/g, function (c) {
+                switch (c) {
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '&': return '&amp;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                }
+            });
+        }
+
+        // Analytics Data Loader
+        function loadAnalyticsData(range, startDate = null, endDate = null) {
+            console.log('Loading analytics data for:', range, startDate, endDate);
+            // This is where you would fetch real data from your backend
+            // Example:
+            // fetch(`/api/artist/analytics?range=${range}&startDate=${startDate}&endDate=${endDate}`)
+            //     .then(response => response.json())
+            //     .then(data => updateAnalyticsUI(data))
+            //     .catch(error => console.error('Error loading analytics:', error));
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const dateDropdown = document.getElementById('dateDropdown');
+            const exportMenu = document.getElementById('exportMenu');
+            const dateButton = event.target.closest('button[onclick*="toggleDateDropdown"]');
+            const exportButton = event.target.closest('button[onclick*="toggleExportMenu"]');
+            
+            if (!event.target.closest('[onclick*="toggleDateDropdown"]') && !event.target.closest('#dateDropdown')) {
+                dateDropdown.classList.add('hidden');
+                document.getElementById('dateChevron').style.transform = 'rotate(0deg)';
+            }
+            
+            if (!event.target.closest('[onclick*="toggleExportMenu"]') && !event.target.closest('#exportMenu')) {
+                exportMenu.classList.add('hidden');
+                document.getElementById('exportChevron').style.transform = 'rotate(0deg)';
+            }
+        });
+
+        // Chart.js Configuration & Initialization
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#9ca3af',
+                        font: { size: 12 },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#d1d5db',
+                    borderColor: '#6b7280',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true
+                }
+            }
+        };
+
+        let charts = {};
+
+        function initializeCharts() {
+            // Views & Engagement Chart
+            const viewsCtx = document.getElementById('viewsEngagementChart');
+            if (viewsCtx && !charts.viewsEngagement) {
+                charts.viewsEngagement = new Chart(viewsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan 1', 'Jan 8', 'Jan 15', 'Jan 22', 'Jan 29'],
+                        datasets: [
+                            {
+                                label: 'Views',
+                                data: [4000, 3000, 2000, 2780, 1890],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#3b82f6',
+                                pointBorderColor: '#1e3a8a',
+                                pointBorderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: 'Engagement',
+                                data: [2400, 1398, 9800, 3908, 4800],
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#5b21b6',
+                                pointBorderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        ...chartConfig,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(107, 114, 128, 0.1)', drawBorder: false },
+                                ticks: { color: '#9ca3af', font: { size: 12 } }
+                            },
+                            x: {
+                                grid: { display: false, drawBorder: false },
+                                ticks: { color: '#9ca3af', font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Follower Growth Chart
+            const followerCtx = document.getElementById('followerGrowthChart');
+            if (followerCtx && !charts.followerGrowth) {
+                charts.followerGrowth = new Chart(followerCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan 1', 'Jan 8', 'Jan 15', 'Jan 22', 'Jan 29'],
+                        datasets: [{
+                            label: 'New Followers',
+                            data: [2400, 2210, 2290, 2000, 2181],
+                            backgroundColor: [
+                                'rgba(236, 72, 153, 0.8)',
+                                'rgba(236, 72, 153, 0.7)',
+                                'rgba(236, 72, 153, 0.6)',
+                                'rgba(236, 72, 153, 0.7)',
+                                'rgba(236, 72, 153, 0.8)'
+                            ],
+                            borderColor: '#be123c',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(107, 114, 128, 0.1)', drawBorder: false },
+                                ticks: { color: '#9ca3af', font: { size: 12 } }
+                            },
+                            x: {
+                                grid: { display: false, drawBorder: false },
+                                ticks: { color: '#9ca3af', font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Age Demographics Chart
+            const ageCtx = document.getElementById('ageChart');
+            if (ageCtx && !charts.age) {
+                charts.age = new Chart(ageCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Age 13-24', 'Age 25-34', 'Age 35-44', 'Age 45+'],
+                        datasets: [{
+                            data: [45, 30, 16, 9],
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.8)',
+                                'rgba(139, 92, 246, 0.8)',
+                                'rgba(236, 72, 153, 0.8)',
+                                'rgba(245, 158, 11, 0.8)'
+                            ],
+                            borderColor: '#1f2937',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        plugins: {
+                            ...chartConfig.plugins,
+                            datalabels: {
+                                color: '#fff',
+                                font: { weight: 'bold' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gender Demographics Chart
+            const genderCtx = document.getElementById('genderChart');
+            if (genderCtx && !charts.gender) {
+                charts.gender = new Chart(genderCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Female', 'Male'],
+                        datasets: [{
+                            data: [52, 48],
+                            backgroundColor: [
+                                'rgba(236, 72, 153, 0.8)',
+                                'rgba(59, 130, 246, 0.8)'
+                            ],
+                            borderColor: '#1f2937',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        plugins: {
+                            ...chartConfig.plugins,
+                            datalabels: {
+                                color: '#fff',
+                                font: { weight: 'bold' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart');
+            if (revenueCtx && !charts.revenue) {
+                charts.revenue = new Chart(revenueCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                        datasets: [{
+                            label: 'Revenue ($)',
+                            data: [2210, 2890, 3500, 2800],
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: '#059669',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        ...chartConfig,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(107, 114, 128, 0.1)', drawBorder: false },
+                                ticks: { color: '#9ca3af', font: { size: 12 }, callback: function(value) { return '$' + value; } }
+                            },
+                            x: {
+                                grid: { display: false, drawBorder: false },
+                                ticks: { color: '#9ca3af', font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize charts when Overview tab is first opened
+        const originalSetActiveTab = setActiveTab;
+        window.setActiveTab = function(tabName) {
+            originalSetActiveTab(tabName);
+            if (tabName === 'overview' && Object.keys(charts).length === 0) {
+                setTimeout(() => initializeCharts(), 100);
+            }
+        };
+
+        // Initialize charts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => initializeCharts(), 500);
+        });
+    </script>
+</body>
+</html>

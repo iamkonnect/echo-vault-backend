@@ -1,0 +1,48 @@
+$kind: http-request
+name: Login
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "artist@example.com",
+      "password": "password123"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      if (json && json.token) {
+          pm.environment.set("token", json.token);
+          pm.environment.set("artistToken", json.token);
+          console.log("Token saved:", json.token);
+      }
+
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response has token", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("token");
+        pm.expect(json.token).to.be.a("string");
+        pm.environment.set("token", json.token);
+        pm.environment.set("artistToken", json.token);
+      });
+      
+      pm.test("Response has user details", function () {
+        const json = pm.response.json();
+        pm.expect(json.user).to.have.property("id");
+        pm.expect(json.user).to.have.property("email");
+        pm.expect(json.user).to.have.property("role");
+      });

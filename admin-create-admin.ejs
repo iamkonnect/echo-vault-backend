@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoVault Admin - Create Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+        .admin-sidebar { background: rgba(15,12,41,0.8); backdrop-filter: blur(10px); }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+        }
+        .glass-input:focus-within {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 shadow-2xl flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
+                </a>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+                <a href="/api/admin/payouts" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-coins w-5"></i> Payouts
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <main class="flex-1 p-12 overflow-y-auto">
+        <header class="mb-12 pb-8 border-b border-white/10">
+            <h1 class="text-5xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 bg-clip-text text-transparent tracking-tight mb-2">Create New Admin</h1>
+            <p class="text-xl text-white/60 font-light">Grant administrative access to a new user account</p>
+        </header>
+
+        <section class="glass p-8 max-w-lg">
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
+                    <i class="fas fa-exclamation-circle mr-2"></i><%= error %>
+                </div>
+            <% } %>
+
+            <form action="/api/admin/create-admin" method="POST" class="space-y-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-white/70 mb-2">Full Name</label>
+                    <div class="glass-input flex items-center px-4">
+                        <i class="fas fa-user text-white/50 mr-3"></i>
+                        <input type="text" id="name" name="name" placeholder="Admin's Full Name" required
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30">
+                    </div>
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-white/70 mb-2">Email Address</label>
+                    <div class="glass-input flex items-center px-4">
+                        <i class="fas fa-envelope text-white/50 mr-3"></i>
+                        <input type="email" id="email" name="email" placeholder="Admin's Email" required
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30">
+                    </div>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-white/70 mb-2">Password</label>
+                    <div class="glass-input flex items-center px-4">
+                        <i class="fas fa-lock text-white/50 mr-3"></i>
+                        <input type="password" id="password" name="password" placeholder="Set Admin Password" required
+                               class="bg-transparent w-full py-3 text-white outline-none placeholder-white/30">
+                    </div>
+                </div>
+                <div>
+                    <label for="role" class="block text-sm font-medium text-white/70 mb-2">Administrative Role</label>
+                    <div class="glass-input flex items-center px-4">
+                        <i class="fas fa-user-tag text-white/50 mr-3"></i>
+                        <select id="role" name="role" required class="bg-transparent w-full py-3 text-white outline-none appearance-none cursor-pointer">
+                            <option value="" class="bg-[#0F0C29]">Select a role...</option>
+                            <% if (roles) { roles.forEach(role => { %>
+                                <option value="<%= role %>" class="bg-[#0F0C29]"><%= role.replace('_', ' ') %></option>
+                            <% }) } %>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95">
+                    <i class="fas fa-check mr-2"></i>CREATE ADMIN ACCOUNT
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/';
+                })
+                .catch(err => {
+                    console.error('Logout error:', err);
+                    window.location.href = '/';
+                });
+        }
+    </script>
+</body>
+</html>

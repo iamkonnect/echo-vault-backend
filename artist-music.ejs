@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoVault Artist - My Music</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #0F0C29; color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 border-r border-white/5 p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-10">
+                <i class="fas fa-headphones text-purple-500 text-2xl"></i>
+                <span class="font-bold tracking-widest uppercase">EchoVault</span>
+            </div>
+            <nav class="space-y-4">
+                <a href="/api/artist/dashboard" class="flex items-center gap-3 p-3 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition"><i class="fas fa-th-large w-5"></i> Dashboard</a>
+                <a href="/api/artist/music" class="flex items-center gap-3 p-3 bg-purple-600/20 text-purple-400 rounded-lg"><i class="fas fa-music w-5"></i> My Music</a>
+                <a href="/api/artist/shorts" class="flex items-center gap-3 p-3 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition"><i class="fas fa-video w-5"></i> Shorts Insights</a>
+                <a href="/api/artist/revenue" class="flex items-center gap-3 p-3 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition"><i class="fas fa-wallet w-5"></i> Revenue</a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <main class="flex-1 p-10 overflow-y-auto">
+        <header class="mb-8 pb-6 border-b border-white/10">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">My Music Library</h1>
+                    <p class="text-white/40">Manage your songs and videos</p>
+                </div>
+                <button onclick="document.getElementById('uploadModal').classList.remove('hidden')" class="bg-purple-600 hover:bg-purple-500 px-6 py-3 rounded-lg font-bold transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> UPLOAD MUSIC
+                </button>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex gap-4 mb-8 border-b border-white/10">
+            <button onclick="switchTab('songs')" class="flex items-center gap-2 p-4 border-b-2 border-purple-500 text-purple-400">
+                <i class="fas fa-music"></i> Songs
+            </button>
+            <button onclick="switchTab('videos')" class="flex items-center gap-2 p-4 border-b-2 border-transparent text-white/60 hover:text-white">
+                <i class="fas fa-video"></i> Videos
+            </button>
+        </div>
+
+        <!-- Songs Tab -->
+        <div id="songsTab" class="space-y-4">
+            <% if (songs.length === 0) { %>
+                <div class="glass p-12 text-center">
+                    <i class="fas fa-music text-4xl text-white/20 mb-4"></i>
+                    <p class="text-white/40">No songs uploaded yet</p>
+                    <p class="text-white/30 text-sm mt-2">Upload your first song to get started</p>
+                </div>
+            <% } else { %>
+                <% songs.forEach(song => { %>
+                <div class="glass p-6 flex justify-between items-start hover:bg-white/5 transition">
+                    <div class="flex gap-4 flex-1">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-music text-2xl text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-bold text-lg"><%= song.title %></p>
+                            <p class="text-white/60 text-sm"><%= Math.floor(song.duration / 60) %>:<%= (song.duration % 60).toString().padStart(2, '0') %></p>
+                            <div class="flex gap-4 mt-2 text-sm">
+                                <span class="text-emerald-400"><i class="fas fa-play mr-1"></i><%= song.playCount %> plays</span>
+                                <span class="text-white/60">Uploaded <%= new Date(song.createdAt).toLocaleDateString() %></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="p-2 hover:bg-white/10 rounded transition">
+                            <i class="fas fa-edit text-blue-400"></i>
+                        </button>
+                        <button onclick="deleteSong('<%= song.id %>')" class="p-2 hover:bg-white/10 rounded transition">
+                            <i class="fas fa-trash text-red-400"></i>
+                        </button>
+                    </div>
+                </div>
+                <% }) %>
+            <% } %>
+        </div>
+
+        <!-- Videos Tab -->
+        <div id="videosTab" class="hidden space-y-4">
+            <% if (videos.length === 0) { %>
+                <div class="glass p-12 text-center">
+                    <i class="fas fa-video text-4xl text-white/20 mb-4"></i>
+                    <p class="text-white/40">No videos uploaded yet</p>
+                </div>
+            <% } else { %>
+                <% videos.forEach(video => { %>
+                <div class="glass p-6 flex justify-between items-start hover:bg-white/5 transition">
+                    <div class="flex gap-4 flex-1">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-video text-2xl text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-bold text-lg"><%= video.title %></p>
+                            <p class="text-white/60 text-sm"><%= Math.floor(video.duration / 60) %>:<%= (video.duration % 60).toString().padStart(2, '0') %></p>
+                            <div class="flex gap-4 mt-2 text-sm">
+                                <span class="text-emerald-400"><i class="fas fa-play mr-1"></i><%= video.playCount %> plays</span>
+                                <span class="text-white/60">Uploaded <%= new Date(video.createdAt).toLocaleDateString() %></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="p-2 hover:bg-white/10 rounded transition">
+                            <i class="fas fa-edit text-blue-400"></i>
+                        </button>
+                        <button onclick="deleteVideo('<%= video.id %>')" class="p-2 hover:bg-white/10 rounded transition">
+                            <i class="fas fa-trash text-red-400"></i>
+                        </button>
+                    </div>
+                </div>
+                <% }) %>
+            <% } %>
+        </div>
+    </main>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div class="glass p-8 rounded-xl max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-6">Upload Music</h2>
+            <form id="uploadForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm mb-2">Title</label>
+                    <input type="text" id="title" placeholder="Song title" class="w-full bg-white/10 border border-white/20 rounded px-4 py-2 text-white placeholder-white/50">
+                </div>
+                <div>
+                    <label class="block text-sm mb-2">Duration (seconds)</label>
+                    <input type="number" id="duration" placeholder="180" class="w-full bg-white/10 border border-white/20 rounded px-4 py-2 text-white placeholder-white/50">
+                </div>
+                <div>
+                    <label class="block text-sm mb-2">File</label>
+                    <input type="file" id="file" class="w-full">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('uploadModal').classList.add('hidden')" class="flex-1 bg-gray-500/30 hover:bg-gray-500/40 text-gray-300 px-4 py-2 rounded transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded transition">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('[id$="Tab"]').forEach(t => t.classList.add('hidden'));
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+        }
+
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => window.location.href = '/')
+                .catch(err => console.error('Logout error:', err));
+        }
+
+        function deleteSong(songId) {
+            if (confirm('Delete this song?')) {
+                fetch(`/api/artist/music/${songId}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+
+        function deleteVideo(videoId) {
+            if (confirm('Delete this video?')) {
+                fetch(`/api/artist/video/${videoId}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('duration', document.getElementById('duration').value);
+            formData.append('file', document.getElementById('file').files[0]);
+
+            try {
+                const res = await fetch('/api/artist/upload-music', { method: 'POST', body: formData });
+                const data = await res.json();
+                alert(data.message);
+                location.reload();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        });
+    </script>
+</body>
+</html>

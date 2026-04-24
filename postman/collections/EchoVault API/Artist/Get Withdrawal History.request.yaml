@@ -1,0 +1,44 @@
+$kind: http-request
+name: Get Withdrawal History
+method: GET
+url: '{{baseUrl}}/api/artist/withdrawals'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{artistToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      pm.test("Response has withdrawals as array", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("withdrawals");
+        pm.expect(json.withdrawals).to.be.an("array");
+      });
+      pm.test("Response has totalWithdrawn as number", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("totalWithdrawn");
+        pm.expect(json.totalWithdrawn).to.be.a("number");
+      });
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response is valid JSON", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an("object");
+      });
+      
+      pm.test("Response has data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("data");
+      });

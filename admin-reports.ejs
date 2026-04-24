@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoVault Admin - Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+        .admin-sidebar { background: rgba(15,12,41,0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 shadow-2xl flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
+                </a>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+                <a href="/api/admin/payouts" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-coins w-5"></i> Payouts
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <main class="flex-1 p-12 overflow-y-auto">
+        <header class="mb-8 pb-6 border-b border-white/10">
+            <h1 class="text-4xl font-black bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent mb-2">User Reports</h1>
+            <p class="text-white/60">Manage community reports and violations</p>
+        </header>
+
+        <!-- Reports Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass p-6">
+                <p class="text-white/60 text-sm mb-2">Total Reports</p>
+                <p class="text-3xl font-bold text-red-400"><%= stats.totalReports %></p>
+            </div>
+            <div class="glass p-6">
+                <p class="text-white/60 text-sm mb-2">Pending Review</p>
+                <p class="text-3xl font-bold text-yellow-400"><%= stats.pendingReports %></p>
+            </div>
+            <div class="glass p-6">
+                <p class="text-white/60 text-sm mb-2">Resolved</p>
+                <p class="text-3xl font-bold text-emerald-400"><%= stats.resolvedReports %></p>
+            </div>
+            <div class="glass p-6">
+                <p class="text-white/60 text-sm mb-2">Users Flagged</p>
+                <p class="text-3xl font-bold text-orange-400"><%= stats.flaggedUsers %></p>
+            </div>
+        </div>
+
+        <!-- Active Reports -->
+        <div class="glass p-8 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-exclamation-circle text-yellow-400"></i> Pending Reports
+            </h2>
+
+            <% if (reports.length === 0) { %>
+                <div class="text-center py-12">
+                    <i class="fas fa-smile text-emerald-400 text-4xl mb-4"></i>
+                    <p class="text-white/40">No pending reports</p>
+                </div>
+            <% } else { %>
+                <div class="space-y-4">
+                    <% reports.forEach(report => { %>
+                    <div class="bg-white/5 p-6 rounded-lg border border-red-500/20 hover:border-red-500/40 transition">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="font-bold text-white"><%= report.reportedUser || 'Unknown User' %></p>
+                                <p class="text-white/60 text-sm">Reported by: <%= report.reporterUser || 'Anonymous' %></p>
+                            </div>
+                            <span class="bg-red-500/20 text-red-300 px-3 py-1 rounded-full text-sm">
+                                <%= report.category || 'General' %>
+                            </span>
+                        </div>
+                        <p class="text-white/80 mb-4"><%= report.reason || 'No reason provided' %></p>
+                        <div class="flex gap-2">
+                            <button onclick="resolveReport('<%= report.id %>')" class="bg-emerald-500/30 hover:bg-emerald-500/40 text-emerald-300 px-4 py-2 rounded text-sm transition">
+                                <i class="fas fa-check mr-1"></i>Resolve
+                            </button>
+                            <button onclick="dismissReport('<%= report.id %>')" class="bg-gray-500/30 hover:bg-gray-500/40 text-gray-300 px-4 py-2 rounded text-sm transition">
+                                <i class="fas fa-times mr-1"></i>Dismiss
+                            </button>
+                            <button onclick="banUser('<%= report.reportedUserId %>')" class="bg-red-500/30 hover:bg-red-500/40 text-red-300 px-4 py-2 rounded text-sm transition">
+                                <i class="fas fa-ban mr-1"></i>Ban User
+                            </button>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Report Categories -->
+        <div class="glass p-8">
+            <h2 class="text-xl font-bold mb-6">Reports by Category</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <% reportsByCategory.forEach(cat => { %>
+                <div class="bg-white/5 p-6 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-white/60 text-sm mb-1"><%= cat.category %></p>
+                            <p class="text-2xl font-bold"><%= cat.count %></p>
+                        </div>
+                        <div class="text-4xl text-white/20">
+                            <% if (cat.category === 'Harassment') { %>
+                                <i class="fas fa-angry"></i>
+                            <% } else if (cat.category === 'Spam') { %>
+                                <i class="fas fa-spam"></i>
+                            <% } else if (cat.category === 'Copyright') { %>
+                                <i class="fas fa-copyright"></i>
+                            <% } else { %>
+                                <i class="fas fa-flag"></i>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => window.location.href = '/')
+                .catch(err => console.error('Logout error:', err));
+        }
+
+        function resolveReport(reportId) {
+            if (confirm('Mark this report as resolved?')) {
+                fetch(`/api/admin/report/${reportId}/resolve`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message || 'Report resolved');
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+
+        function dismissReport(reportId) {
+            if (confirm('Dismiss this report?')) {
+                fetch(`/api/admin/report/${reportId}/dismiss`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message || 'Report dismissed');
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+
+        function banUser(userId) {
+            if (confirm('Are you sure you want to ban this user? This cannot be undone easily.')) {
+                fetch(`/api/admin/user/${userId}/ban`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message || 'User banned');
+                        location.reload();
+                    })
+                    .catch(e => alert('Error: ' + e.message));
+            }
+        }
+    </script>
+</body>
+</html>

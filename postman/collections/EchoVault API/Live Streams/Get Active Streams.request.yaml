@@ -1,0 +1,26 @@
+$kind: http-request
+name: Get Active Streams
+method: GET
+url: '{{baseUrl}}/api/live/streams/active'
+order: 2000
+queryParams:
+  - key: limit
+    value: '5'
+
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response is valid JSON", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an("object");
+      });
+      
+      pm.test("Response has data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("data");
+      });

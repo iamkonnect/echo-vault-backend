@@ -1,0 +1,49 @@
+$kind: http-request
+name: Request Withdrawal
+method: POST
+url: '{{baseUrl}}/api/artist/withdraw'
+order: 7000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{artistToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "amount": 50.00
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201 or 400", function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400]);
+      });
+      if (pm.response.code === 201) {
+        pm.test("Response has transaction.id", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("transaction");
+          pm.expect(json.transaction).to.have.property("id");
+        });
+        pm.test("transaction.type is WITHDRAWAL", function () {
+          const json = pm.response.json();
+          pm.expect(json.transaction.type).to.equal("WITHDRAWAL");
+        });
+      }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+        pm.response.to.have.status([200, 201]);
+      });
+      
+      pm.test("Response has success property", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("success");
+      });

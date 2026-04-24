@@ -1,0 +1,207 @@
+name: EchoVault API Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      api:
+        image: node:18-alpine
+        options: >-
+          --health-cmd="curl -f http://localhost:5000/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 5000:5000
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          JWT_SECRET: test-secret-key
+        volumes:
+          - ${{ github.workspace }}:/app
+        working-directory: /app
+        run: |
+          npm install
+          npm run seed-test-db
+          npm start
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-html
+
+      - name: Wait for API to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:5000/health; do sleep 2; done'
+        env:
+          NODE_ENV: test
+
+      - name: Run Auth Tests
+        run: |
+          newman run postman/collections/EchoVault\ API.json \
+            -e postman/environments/EchoVault\ Local.json \
+            --folder "Auth" \
+            -r cli,json,html \
+            --reporter-json-export reports/auth-tests.json \
+            --reporter-html-export reports/auth-tests.html
+
+      - name: Run Artist Tests
+        run: |
+          newman run postman/collections/EchoVault\ API.json \
+            -e postman/environments/EchoVault\ Local.json \
+            --folder "Artist" \
+            -r cli,json,html \
+            --reporter-json-export reports/artist-tests.json \
+            --reporter-html-export reports/artist-tests.html
+
+      - name: Run Admin Tests
+        run: |
+          newman run postman/collections/EchoVault\ API.json \
+            -e postman/environments/EchoVault\ Local.json \
+            --folder "Admin" \
+            -r cli,json,html \
+            --reporter-json-export reports/admin-tests.json \
+            --reporter-html-export reports/admin-tests.html
+
+      - name: Run Analytics Tests
+        run: |
+          newman run postman/collections/EchoVault\ API.json \
+            -e postman/environments/EchoVault\ Local.json \
+            --folder "Analytics" \
+            -r cli,json,html \
+            --reporter-json-export reports/analytics-tests.json \
+            --reporter-html-export reports/analytics-tests.html
+
+      - name: Run Public API Tests
+        run: |
+          newman run postman/collections/EchoVault\ API.json \
+            -e postman/environments/EchoVault\ Local.json \
+            --folder "Tracks" \
+            -r cli,json,html \
+            --reporter-json-export reports/public-tests.json \
+            --reporter-html-export reports/public-tests.html
+
+      - name: Generate Combined Report
+        if: always()
+        run: |
+          node scripts/generate-test-report.js
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: reports/
+          retention-days: 30
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('reports/combined-summary.json'));
+            
+            const passed = results.stats.totalPass;
+            const failed = results.stats.totalFail;
+            const tests = results.stats.totalTests;
+            
+            const comment = `## API Test Results
+            
+            - Total Tests: ${tests}
+            - ✅ Passed: ${passed}
+            - ❌ Failed: ${failed}
+            - Success Rate: ${((passed/tests)*100).toFixed(2)}%
+            
+            [📊 Detailed Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  security-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'EchoVault API'
+          path: '.'
+          format: 'JSON'
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: reports/dependency-check-report.json
+
+  performance-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Run Performance Tests
+        run: |
+          newman run postman/collections/EchoVault\ API.json \
+            -e postman/environments/EchoVault\ Local.json \
+            -n 5 \
+            --delay 1000 \
+            -r json \
+            --reporter-json-export perf-results.json
+
+      - name: Analyze Performance
+        run: node scripts/analyze-performance.js perf-results.json
+
+      - name: Archive Performance Data
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-data
+          path: perf-results.json

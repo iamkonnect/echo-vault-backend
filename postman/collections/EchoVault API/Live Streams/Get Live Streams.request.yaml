@@ -1,0 +1,30 @@
+$kind: http-request
+name: Get Live Streams
+method: GET
+url: '{{baseUrl}}/api/live/streams'
+order: 1000
+queryParams:
+  - key: status
+    value: LIVE
+  - key: limit
+    value: '10'
+  - key: offset
+    value: '0'
+
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+      });
+      
+      pm.test("Response is valid JSON", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an("object");
+      });
+      
+      pm.test("Response has data", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("data");
+      });
