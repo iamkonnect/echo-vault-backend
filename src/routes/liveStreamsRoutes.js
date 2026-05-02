@@ -185,4 +185,153 @@ router.get('/streams/:id', async (req, res) => {
   }
 });
 
+// POST /api/live/streams/start - Start a live stream (artist only)
+router.post('/streams/start', async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    const userId = req.user?.id; // From auth middleware
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title is required',
+      });
+    }
+
+    // Create live stream
+    const stream = await prisma.liveStream.create({
+      data: {
+        artistId: userId,
+        title,
+        description: description || '',
+        status: 'LIVE',
+        startedAt: new Date(),
+        viewerCount: 0,
+        giftCount: 0,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        id: stream.id,
+        title: stream.title,
+        status: stream.status,
+        message: 'Live stream started',
+      },
+    });
+  } catch (error) {
+    console.error('Error starting stream:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to start stream',
+      error: error.message,
+    });
+  }
+});
+
+// POST /api/live/streams/stop - Stop a live stream (artist only)
+router.post('/streams/stop', async (req, res) => {
+  try {
+    const { streamId } = req.body;
+    const userId = req.user?.id; // From auth middleware
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    if (!streamId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Stream ID is required',
+      });
+    }
+
+    // Update stream status to ENDED
+    const stream = await prisma.liveStream.update({
+      where: { id: streamId },
+      data: {
+        status: 'ENDED',
+        endedAt: new Date(),
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        id: stream.id,
+        status: stream.status,
+        message: 'Live stream ended',
+      },
+    });
+  } catch (error) {
+    console.error('Error stopping stream:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to stop stream',
+      error: error.message,
+    });
+  }
+});
+
+// POST /api/live/streams/join-request - Join a stream (viewer)
+router.post('/streams/join-request', async (req, res) => {
+  try {
+    const { streamId } = req.body;
+    const userId = req.user?.id; // From auth middleware
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    if (!streamId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Stream ID is required',
+      });
+    }
+
+    // Verify stream exists
+    const stream = await prisma.liveStream.findUnique({
+      where: { id: streamId },
+    });
+
+    if (!stream) {
+      return res.status(404).json({
+        success: false,
+        message: 'Stream not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        streamId,
+        joinedAt: new Date().toISOString(),
+        message: 'Joined stream successfully',
+      },
+    });
+  } catch (error) {
+    console.error('Error joining stream:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to join stream',
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

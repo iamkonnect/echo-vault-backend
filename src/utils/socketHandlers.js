@@ -60,11 +60,8 @@ module.exports = function setupSocketHandlers(io) {
           where: { id: streamId },
           data: {
             viewerCount: activeStreams.get(streamId).viewers.size,
-            isLive: true,
           },
-        }).catch(() => {
-          // Stream might not exist yet
-        });
+        }).catch(() => {});
 
         // Notify others in stream
         io.to(`stream:${streamId}`).emit('userJoinedStream', {
@@ -133,10 +130,8 @@ module.exports = function setupSocketHandlers(io) {
           data: {
             senderId: user.id,
             receiverId,
-            giftId: giftId || 'generic-gift',
-            quantity,
+            liveStreamId: streamId || null,
             amount,
-            streamId: streamId || null,
             createdAt: new Date(),
           },
         });
@@ -156,11 +151,8 @@ module.exports = function setupSocketHandlers(io) {
           await prisma.liveStream.update({
             where: { id: streamId },
             data: {
-              totalGifts: {
+              giftCount: {
                 increment: quantity,
-              },
-              totalGiftAmount: {
-                increment: amount,
               },
             },
           }).catch(() => {});
@@ -176,10 +168,6 @@ module.exports = function setupSocketHandlers(io) {
             quantity,
             amount,
             timestamp: new Date().toISOString(),
-            totalStreamGifts: (await prisma.liveStream.findUnique({
-              where: { id: streamId },
-              select: { totalGifts: true },
-            }))?.totalGifts || 0,
           });
         } else {
           // Send to recipient's sockets
@@ -216,15 +204,8 @@ module.exports = function setupSocketHandlers(io) {
     // Get available gifts for UI
     socket.on('getAvailableGifts', async (callback) => {
       try {
-        const gifts = await prisma.gift.findMany({
-          select: {
-            id: true,
-            giftId: true,
-            name: true,
-            image: true,
-            baseAmount: true,
-          },
-          distinct: ['giftId'],
+        const gifts = await prisma.giftTemplate.findMany({
+          where: { isActive: true },
         }).catch(() => []);
 
         callback?.({

@@ -52,13 +52,17 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  songs           Song[]
-  videos          Video[]
-  shorts          Short[]
-  liveStreams     LiveStream[]
-  giftsSent       Gift[]   @relation("sender")
-  giftsReceived   Gift[]   @relation("receiver")
-  transactions    Transaction[]
+  songs                Song[]
+  videos               Video[]
+  shorts               Short[]
+  liveStreams          LiveStream[]
+  giftsSent            Gift[]   @relation("sender")
+  giftsReceived        Gift[]   @relation("receiver")
+  transactions         Transaction[]
+  streamChatMessages   StreamChat[]
+  directMessagesSent   DirectMessage[] @relation("sender")
+  directMessagesReceived DirectMessage[] @relation("receiver")
+  notifications        Notification[]
 }
 
 model Song {
@@ -114,6 +118,7 @@ model LiveStream {
   giftCount Int            @default(0)
   viewerCount Int          @default(0)
   gifts     Gift[]
+  chatMessages StreamChat[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 }
@@ -143,6 +148,8 @@ model Transaction {
   type        TransactionType
   status      TransactionStatus @default(PENDING)
   description String?
+  paymentGateway       String?
+  gatewayTransactionId String?           @unique
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -159,4 +166,46 @@ model GiftTemplate {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model CoinPackage {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  price     Float
+  coins     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StreamChat {
+  id        String   @id @default(uuid())
+  streamId  String
+  stream    LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model DirectMessage {
+  id        String   @id @default(uuid())
+  senderId  String
+  sender    User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver  User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  text      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String   @default("info")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
