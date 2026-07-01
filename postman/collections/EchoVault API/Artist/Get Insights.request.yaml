@@ -1,4 +1,4 @@
-$kind: http-request
+﻿$kind: http-request
 name: Get Insights
 method: GET
 url: '{{baseUrl}}/api/artist/insights'
@@ -29,21 +29,4 @@ scripts:
         const json = pm.response.json();
         pm.expect(json).to.have.property("shorts");
         pm.expect(json.shorts).to.be.an("array");
-      });
-scripts:
-  - type: afterResponse
-    language: text/javascript
-    code: |-
-      pm.test("Status code is 200", function () {
-        pm.response.to.have.status(200);
-      });
-      
-      pm.test("Response is valid JSON", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.be.an("object");
-      });
-      
-      pm.test("Response has data", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("data");
       });

@@ -1,85 +1,53 @@
 const prisma = require('../utils/prisma');
+const { uploadAudio, uploadVideo, uploadImage } = require('../../multerConfig');
 
-// Get artist insights (stats)
-exports.getArtistInsights = async (req, res) => {
-  const artistId = req.user.id;
+// ============================================================================
+// API ENDPOINTS - JSON Responses for Flutter Frontend
+// ============================================================================
 
+// GET /api/artist/dashboard
+// Returns artist dashboard data (overview, stats)
+exports.getArtistDashboard = async (req, res) => {
   try {
-    // 1. Total Content Performance
+    const artistId = req.user.id;
+
     const songStats = await prisma.song.aggregate({
       where: { artistId },
       _sum: { playCount: true },
+      _count: true,
     });
 
-    // 2. Earnings from Gifts (Live + Shorts)
-    const giftEarnings = await prisma.gift.aggregate({
-      where: { receiverId: artistId },
-      _sum: { amount: true },
-    });
+    const shortCount = await prisma.short.count({ where: { artistId } });
+    const videoCount = await prisma.video.count({ where: { artistId } });
 
-    // 3. Wallet summary
     const wallet = await prisma.user.findUnique({
       where: { id: artistId },
-      select: { walletBalance: true },
-    });
-
-    // 4. Shorts Summary
-    const shortsPerformance = await prisma.short.findMany({
-      where: { artistId },
-      select: { id: true, title: true, playCount: true, giftCount: true, createdAt: true },
-    });
-
-    // 5. Recent transactions
-    const recentTransactions = await prisma.transaction.findMany({
-      where: { userId: artistId },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
+      select: { walletBalance: true, name: true, email: true },
     });
 
     res.json({
-      totalPlays: songStats._sum.playCount || 0,
-      totalEarnings: giftEarnings._sum.amount || 0,
-      currentBalance: wallet?.walletBalance || 0,
-      shorts: shortsPerformance,
-      recentTransactions,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Upload music (song)
-exports.uploadMusic = async (req, res) => {
-  try {
-    const artistId = req.user.id;
-    const { title, duration } = req.body;
-
-    if (!title || !duration || !req.file) {
-      return res.status(400).json({ message: 'Title, duration, and file are required' });
-    }
-
-    // Save file locally or to cloud storage
-    const fileUrl = `/uploads/music/${req.file.filename}`;
-
-    const song = await prisma.song.create({
+      success: true,
       data: {
-        title,
-        artistId,
-        fileUrl,
-        duration: parseInt(duration),
+        totalPlays: songStats._sum.playCount || 0,
+        totalSongs: songStats._count || 0,
+        totalShorts: shortCount,
+        totalVideos: videoCount,
+        totalContent: (songStats._count || 0) + shortCount + videoCount,
+        currentBalance: wallet?.walletBalance || 0,
+        artistName: wallet?.name,
+        artistEmail: wallet?.email,
       },
     });
-
-    res.status(201).json({
-      message: 'Music uploaded successfully',
-      song,
-    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-// Get artist's music library
+// GET /api/artist/music
+// Returns artist's uploaded music library
 exports.getArtistMusic = async (req, res) => {
   try {
     const artistId = req.user.id;
@@ -94,12 +62,11 @@ exports.getArtistMusic = async (req, res) => {
         coverUrl: true,
         duration: true,
         playCount: true,
+        genre: true,
         createdAt: true,
       },
     });
 
-    // Note: Ensure your Prisma schema has a 'Video' model. 
-    // If not, you may need to use 'prisma.short' with a category field.
     const videos = await prisma.video.findMany({
       where: { artistId },
       orderBy: { createdAt: 'desc' },
@@ -114,113 +81,173 @@ exports.getArtistMusic = async (req, res) => {
       },
     });
 
-    res.json({
-      songs,
-      videos,
-      totalSongs: songs.length,
-      totalVideos: videos.length,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Upload short video
-exports.uploadShort = async (req, res) => {
-  try {
-    const artistId = req.user.id;
-    const { title, duration } = req.body;
-
-    if (!title || !duration || !req.file) {
-      return res.status(400).json({ message: 'Title, duration, and file are required' });
-    }
-
-    const videoUrl = `/uploads/shorts/${req.file.filename}`;
-
-    const short = await prisma.short.create({
-      data: {
-        title,
-        artistId,
-        videoUrl,
-        duration: parseInt(duration),
+    const shorts = await prisma.short.findMany({
+      where: { artistId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        videoUrl: true,
+        thumbnailUrl: true,
+        duration: true,
+        playCount: true,
+        giftCount: true,
+        createdAt: true,
       },
     });
 
-    res.status(201).json({
-      message: 'Short uploaded successfully',
-      short,
+    res.json({
+      success: true,
+      data: {
+        songs,
+        videos,
+        shorts,
+        totalSongs: songs.length,
+        totalVideos: videos.length,
+        totalShorts: shorts.length,
+        totalContent: songs.length + videos.length + shorts.length,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-// Request withdrawal
-exports.requestWithdrawal = async (req, res) => {
+// GET /api/artist/insights
+// Returns artist insights and analytics
+exports.getArtistInsights = async (req, res) => {
   try {
     const artistId = req.user.id;
-    const { amount } = req.body;
 
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Invalid withdrawal amount' });
-    }
+    // Total Content Performance
+    const songStats = await prisma.song.aggregate({
+      where: { artistId },
+      _sum: { playCount: true },
+    });
 
-    // Check if user has sufficient balance
-    const user = await prisma.user.findUnique({
+    // Earnings from Gifts
+    const giftEarnings = await prisma.gift.aggregate({
+      where: { receiverId: artistId },
+      _sum: { amount: true },
+    });
+
+    // Wallet summary
+    const wallet = await prisma.user.findUnique({
       where: { id: artistId },
       select: { walletBalance: true },
     });
 
-    if (user.walletBalance < amount) {
-      return res.status(400).json({ message: 'Insufficient balance' });
-    }
-
-    // Create withdrawal transaction
-    const transaction = await prisma.transaction.create({
-      data: {
-        userId: artistId,
-        amount,
-        type: 'WITHDRAWAL',
-        status: 'PENDING',
-        description: `Withdrawal request for $${amount}`,
-      },
-    });
-
-    res.status(201).json({
-      message: 'Withdrawal request submitted',
-      transaction,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get withdrawal history
-exports.getWithdrawalHistory = async (req, res) => {
-  try {
-    const artistId = req.user.id;
-
-    const withdrawals = await prisma.transaction.findMany({
-      where: {
-        userId: artistId,
-        type: 'WITHDRAWAL',
+    // Shorts Summary
+    const shortsPerformance = await prisma.short.findMany({
+      where: { artistId },
+      select: {
+        id: true,
+        title: true,
+        playCount: true,
+        giftCount: true,
+        createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    // Recent transactions
+    const recentTransactions = await prisma.transaction.findMany({
+      where: { userId: artistId },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
     });
 
     res.json({
-      withdrawals,
-      totalWithdrawn: withdrawals
-        .filter(w => w.status === 'COMPLETED')
-        .reduce((sum, w) => sum + w.amount, 0),
-      pendingWithdrawals: withdrawals.filter(w => w.status === 'PENDING'),
+      success: true,
+      data: {
+        totalPlays: songStats._sum.playCount || 0,
+        totalEarnings: giftEarnings._sum.amount || 0,
+        currentBalance: wallet?.walletBalance || 0,
+        shorts: shortsPerformance,
+        recentTransactions,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-// Get artist earnings breakdown
+// GET /api/artist/live-insights
+// Returns live stream insights and real-time analytics
+exports.getLiveInsights = async (req, res) => {
+  try {
+    const artistId = req.user.id;
+
+    const liveStreams = await prisma.liveStream.findMany({
+      where: { artistId },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    const totalViewers = liveStreams.reduce((sum, s) => sum + (s.viewerCount || 0), 0);
+    const totalGifts = liveStreams.reduce((sum, s) => sum + (s.giftCount || 0), 0);
+
+    res.json({
+      success: true,
+      data: {
+        activeStreams: liveStreams.filter(s => s.status === 'ACTIVE').length,
+        totalLiveStreams: liveStreams.length,
+        totalViewers,
+        totalGifts,
+        recentStreams: liveStreams,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// GET /api/artist/shorts-insights
+// Returns shorts-specific insights
+exports.getShortsInsights = async (req, res) => {
+  try {
+    const artistId = req.user.id;
+
+    const shorts = await prisma.short.findMany({
+      where: { artistId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalPlays = shorts.reduce((sum, s) => sum + (s.playCount || 0), 0);
+    const totalGifts = shorts.reduce((sum, s) => sum + (s.giftCount || 0), 0);
+    const averagePlaysPerShort = shorts.length > 0 ? Math.round(totalPlays / shorts.length) : 0;
+
+    res.json({
+      success: true,
+      data: {
+        totalShorts: shorts.length,
+        totalPlays,
+        totalGifts,
+        averagePlaysPerShort,
+        topShorts: shorts.slice(0, 5),
+        allShorts: shorts,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// GET /api/artist/earnings
+// Returns revenue data and earnings breakdown
 exports.getEarningsBreakdown = async (req, res) => {
   try {
     const artistId = req.user.id;
@@ -248,135 +275,36 @@ exports.getEarningsBreakdown = async (req, res) => {
     const totalEarnings = shortEarnings + liveEarnings;
 
     res.json({
-      shortEarnings,
-      liveEarnings,
-      totalEarnings,
-      breakdown: {
-        shorts: {
-          amount: shortEarnings,
-          percentage: totalEarnings > 0 ? ((shortEarnings / totalEarnings) * 100).toFixed(2) : 0,
-        },
-        live: {
-          amount: liveEarnings,
-          percentage: totalEarnings > 0 ? ((liveEarnings / totalEarnings) * 100).toFixed(2) : 0,
+      success: true,
+      data: {
+        shortEarnings,
+        liveEarnings,
+        totalEarnings,
+        breakdown: {
+          shorts: {
+            amount: shortEarnings,
+            percentage: totalEarnings > 0 ? ((shortEarnings / totalEarnings) * 100).toFixed(2) : 0,
+          },
+          live: {
+            amount: liveEarnings,
+            percentage: totalEarnings > 0 ? ((liveEarnings / totalEarnings) * 100).toFixed(2) : 0,
+          },
         },
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-// Render Dashboard
-exports.renderDashboard = async (req, res) => {
-  const artistId = req.user.id;
-  try {
-    const songStats = await prisma.song.aggregate({
-      where: { artistId },
-      _sum: { playCount: true },
-    });
-    
-    const songCount = await prisma.song.count({ where: { artistId } });
-    const shortCount = await prisma.short.count({ where: { artistId } });
-
-    const stats = {
-      streams: songStats._sum.playCount || 0,
-      monthlyListeners: 0, // Placeholder for future logic
-      contentCount: songCount + shortCount,
-    };
-
-    res.render('artist-dashboard', { 
-      user: req.user, 
-      stats 
-    });
-  } catch (error) {
-    res.status(500).render('error', { message: error.message });
-  }
-};
-
-// Render My Music Page
-exports.renderMyMusicPage = async (req, res) => {
+// GET /api/artist/withdrawals
+// Returns withdrawal history
+exports.getWithdrawalHistory = async (req, res) => {
   try {
     const artistId = req.user.id;
-    const songs = await prisma.song.findMany({
-      where: { artistId },
-      orderBy: { createdAt: 'desc' },
-    });
-    const videos = await prisma.video.findMany({
-      where: { artistId },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.render('my-music', { songs, videos, user: req.user });
-  } catch (error) {
-    res.status(500).render('error', { message: error.message });
-  }
-};
-
-// Render Revenue Page with 4-way breakdown (based on gifts only)
-exports.renderRevenuePage = async (req, res) => {
-  try {
-    const artistId = req.user.id;
-    const user = await prisma.user.findUnique({
-      where: { id: artistId },
-    });
-
-    // Get all gifts received to categorize by content type
-    const allGifts = await prisma.gift.findMany({
-      where: { receiverId: artistId },
-    });
-
-    // Calculate earnings by content type
-    // Since Song/Video don't have direct gift relations, we estimate based on available data
-    // Audio Music: songs with play counts (estimated 10% of song play value)
-    // Music Video: videos with play counts (estimated 15% of video play value)
-    // Shorts: gifts directly linked to Short model
-    // Live: gifts directly linked to LiveStream model
-
-    const audioMusicGifts = allGifts.filter(g => !g.shortId && !g.liveStreamId).slice(0, Math.floor(allGifts.length * 0.25)) || [];
-    const musicVideoGifts = allGifts.filter(g => !g.shortId && !g.liveStreamId).slice(Math.floor(allGifts.length * 0.25), Math.floor(allGifts.length * 0.5)) || [];
-    
-    const shortsGifts = await prisma.gift.aggregate({
-      where: {
-        receiverId: artistId,
-        shortId: { not: null },
-      },
-      _sum: { amount: true },
-    });
-
-    const liveGifts = await prisma.gift.aggregate({
-      where: {
-        receiverId: artistId,
-        liveStreamId: { not: null },
-      },
-      _sum: { amount: true },
-    });
-
-    const audioMusicAmount = audioMusicGifts.reduce((sum, g) => sum + g.amount, 0) || 0;
-    const musicVideoAmount = musicVideoGifts.reduce((sum, g) => sum + g.amount, 0) || 0;
-    const shortsAmount = shortsGifts._sum.amount || 0;
-    const liveAmount = liveGifts._sum.amount || 0;
-
-    // Calculate total and percentages
-    const totalEarnings = audioMusicAmount + musicVideoAmount + shortsAmount + liveAmount;
-
-    const breakdown = {
-      audioMusic: {
-        amount: audioMusicAmount,
-        percentage: totalEarnings > 0 ? ((audioMusicAmount / totalEarnings) * 100).toFixed(2) : 0,
-      },
-      musicVideo: {
-        amount: musicVideoAmount,
-        percentage: totalEarnings > 0 ? ((musicVideoAmount / totalEarnings) * 100).toFixed(2) : 0,
-      },
-      shorts: {
-        amount: shortsAmount,
-        percentage: totalEarnings > 0 ? ((shortsAmount / totalEarnings) * 100).toFixed(2) : 0,
-      },
-      live: {
-        amount: liveAmount,
-        percentage: totalEarnings > 0 ? ((liveAmount / totalEarnings) * 100).toFixed(2) : 0,
-      },
-    };
 
     const withdrawals = await prisma.transaction.findMany({
       where: {
@@ -386,161 +314,480 @@ exports.renderRevenuePage = async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    res.render('revenue', { 
-      currentBalance: user.walletBalance,
-      breakdown,
-      totalEarnings,
-      withdrawals,
-      user: req.user 
+    const totalWithdrawn = withdrawals
+      .filter(w => w.status === 'COMPLETED')
+      .reduce((sum, w) => sum + w.amount, 0);
+
+    const pendingWithdrawals = withdrawals.filter(w => w.status === 'PENDING');
+
+    res.json({
+      success: true,
+      data: {
+        withdrawals,
+        totalWithdrawn,
+        pendingWithdrawals,
+        pendingAmount: pendingWithdrawals.reduce((sum, w) => sum + w.amount, 0),
+      },
     });
   } catch (error) {
-    console.error('Error rendering revenue page:', error);
-    res.status(500).render('error', { message: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-// Render Shorts Insights Page
-exports.renderShortsInsightsPage = async (req, res) => {
+// POST /api/artist/withdraw
+// Request a fund withdrawal
+exports.requestWithdrawal = async (req, res) => {
   try {
     const artistId = req.user.id;
-    const shorts = await prisma.short.findMany({
-      where: { artistId },
-      orderBy: { createdAt: 'desc' },
+    const { amount, bankAccount } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid withdrawal amount',
+      });
+    }
+
+    // Check if user has sufficient balance
+    const user = await prisma.user.findUnique({
+      where: { id: artistId },
+      select: { walletBalance: true },
     });
-    const totalLikes = shorts.reduce((sum, s) => sum + (s.giftCount || 0), 0);
-    const totalGiftRevenue = shorts.reduce((sum, s) => sum + ((s.giftCount || 0) * 0.05), 0);
-    res.render('shorts-insights', { 
-      shorts, 
-      totalLikes, 
-      totalGiftRevenue,
-      user: req.user 
+
+    if (user.walletBalance < amount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient balance',
+      });
+    }
+
+    // Create withdrawal transaction
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId: artistId,
+        amount,
+        type: 'WITHDRAWAL',
+        status: 'PENDING',
+        description: `Withdrawal request for $${amount}`,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        message: 'Withdrawal request submitted',
+        transaction,
+      },
     });
   } catch (error) {
-    res.status(500).render('error', { message: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
-// Render Upload Pages
+// POST /api/artist/start-stream
+// Start a new live stream
+exports.startLiveStream = async (req, res) => {
+  try {
+    const artistId = req.user.id;
+    const { title, thumbnail } = req.body;
+
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        error: 'Stream title is required',
+      });
+    }
+
+    const liveStream = await prisma.liveStream.create({
+      data: {
+        title,
+        artistId,
+        thumbnailUrl: thumbnail || null,
+        status: 'ACTIVE',
+        viewerCount: 0,
+        giftCount: 0,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: liveStream,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// POST /api/artist/stop-stream
+// Stop an active live stream
+exports.stopLiveStream = async (req, res) => {
+  try {
+    const { streamId } = req.body;
+    const artistId = req.user.id;
+
+    if (!streamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Stream ID is required',
+      });
+    }
+
+    // Verify ownership
+    const stream = await prisma.liveStream.findUnique({
+      where: { id: streamId },
+    });
+
+    if (!stream || stream.artistId !== artistId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+      });
+    }
+
+    const updatedStream = await prisma.liveStream.update({
+      where: { id: streamId },
+      data: {
+        status: 'ENDED',
+        endedAt: new Date(),
+      },
+    });
+
+    res.json({
+      success: true,
+      data: updatedStream,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// PUT /api/artist/music/{musicId}
+// Edit music metadata
+exports.editMusic = async (req, res) => {
+  try {
+    const { musicId } = req.params;
+    const artistId = req.user.id;
+    const { title, genre, description } = req.body;
+
+    // Verify ownership - try song first
+    let music = await prisma.song.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music && music.artistId !== artistId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+      });
+    }
+
+    if (music) {
+      const updated = await prisma.song.update({
+        where: { id: musicId },
+        data: { title, genre, ...(description && { description }) },
+      });
+
+      return res.json({
+        success: true,
+        data: updated,
+      });
+    }
+
+    // Try video
+    music = await prisma.video.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music && music.artistId !== artistId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+      });
+    }
+
+    if (music) {
+      const updated = await prisma.video.update({
+        where: { id: musicId },
+        data: { title, ...(description && { description }) },
+      });
+
+      return res.json({
+        success: true,
+        data: updated,
+      });
+    }
+
+    // Try short
+    music = await prisma.short.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music && music.artistId !== artistId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+      });
+    }
+
+    if (music) {
+      const updated = await prisma.short.update({
+        where: { id: musicId },
+        data: { title, ...(description && { description }) },
+      });
+
+      return res.json({
+        success: true,
+        data: updated,
+      });
+    }
+
+    res.status(404).json({
+      success: false,
+      error: 'Music not found',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// DELETE /api/artist/music/{musicId}
+// Delete music track
+exports.deleteMusic = async (req, res) => {
+  try {
+    const { musicId } = req.params;
+    const artistId = req.user.id;
+
+    // Try song
+    let music = await prisma.song.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music) {
+      if (music.artistId !== artistId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      await prisma.song.delete({ where: { id: musicId } });
+
+      return res.json({
+        success: true,
+        message: 'Music deleted successfully',
+      });
+    }
+
+    // Try video
+    music = await prisma.video.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music) {
+      if (music.artistId !== artistId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      await prisma.video.delete({ where: { id: musicId } });
+
+      return res.json({
+        success: true,
+        message: 'Video deleted successfully',
+      });
+    }
+
+    // Try short
+    music = await prisma.short.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music) {
+      if (music.artistId !== artistId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      await prisma.short.delete({ where: { id: musicId } });
+
+      return res.json({
+        success: true,
+        message: 'Short deleted successfully',
+      });
+    }
+
+    res.status(404).json({
+      success: false,
+      error: 'Music not found',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// GET /api/artist/music/{musicId}/stats
+// Get detailed music statistics
+exports.getMusicStats = async (req, res) => {
+  try {
+    const { musicId } = req.params;
+    const artistId = req.user.id;
+
+    // Try song
+    let music = await prisma.song.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music) {
+      if (music.artistId !== artistId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          type: 'song',
+          ...music,
+        },
+      });
+    }
+
+    // Try video
+    music = await prisma.video.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music) {
+      if (music.artistId !== artistId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          type: 'video',
+          ...music,
+        },
+      });
+    }
+
+    // Try short
+    music = await prisma.short.findUnique({
+      where: { id: musicId },
+    });
+
+    if (music) {
+      if (music.artistId !== artistId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          type: 'short',
+          ...music,
+        },
+      });
+    }
+
+    res.status(404).json({
+      success: false,
+      error: 'Music not found',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// ============================================================================
+// LEGACY EXPORTS (for backwards compatibility with existing routes)
+// ============================================================================
+
+exports.getArtistDashboard = exports.getArtistDashboard;
+exports.renderDashboard = exports.getArtistDashboard;
+exports.renderMyMusicPage = exports.getArtistMusic;
+exports.renderRevenuePage = exports.getEarningsBreakdown;
+exports.renderLiveInsightsPage = exports.getLiveInsights;
+exports.renderShortsInsightsPage = exports.getShortsInsights;
+exports.uploadMusic = async (req, res) => {
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/tracks/upload instead',
+  });
+};
+exports.uploadShort = async (req, res) => {
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/artist/upload/shorts instead',
+  });
+};
 exports.renderUploadAudioPage = async (req, res) => {
-  res.render('upload-audio', { user: req.user, artistId: req.user.id });
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/tracks/upload instead',
+  });
 };
 exports.renderUploadVideoPage = async (req, res) => {
-  res.render('upload-video', { user: req.user, artistId: req.user.id });
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/artist/upload/video instead',
+  });
 };
 exports.renderUploadShortsPage = async (req, res) => {
-  res.render('upload-shorts', { user: req.user, artistId: req.user.id });
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/artist/upload/shorts instead',
+  });
 };
-
-// Upload Handlers
 exports.handleUploadAudio = async (req, res) => {
-  try {
-    const { title, genre } = req.body;
-    const artistId = req.user.id;
-    const audioFile = req.files?.['audioFile'] ? `/uploads/audio/${req.files['audioFile'][0].filename}` : null;
-    const coverArt = req.files?.['coverArt'] ? `/uploads/images/${req.files['coverArt'][0].filename}` : null;
-
-    if (!audioFile) {
-      return res.status(400).render('error', { message: 'Audio file is required.' });
-    }
-
-    await prisma.song.create({
-      data: {
-        title,
-        genre: genre || 'General',
-        fileUrl: audioFile,
-        coverUrl: coverArt,
-        artistId,
-        playCount: 0,
-      },
-    });
-
-    res.redirect('/api/artist/my-music?success=true');
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).render('error', { message: 'Upload failed' });
-  }
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/tracks/upload instead',
+  });
 };
-
 exports.handleUploadVideo = async (req, res) => {
-  try {
-    const { title, description } = req.body;
-    const artistId = req.user.id;
-    const videoFile = req.files?.['videoFile'] ? `/uploads/video/${req.files['videoFile'][0].filename}` : null;
-    const thumbnail = req.files?.['thumbnail'] ? `/uploads/images/${req.files['thumbnail'][0].filename}` : null;
-
-    if (!videoFile) {
-      return res.status(400).render('error', { message: 'Video file is required.' });
-    }
-
-    await prisma.video.create({
-      data: {
-        title,
-        fileUrl: videoFile,
-        thumbnailUrl: thumbnail,
-        artistId,
-        playCount: 0,
-        duration: 0,
-      },
-    });
-
-    res.redirect('/api/artist/my-music?success=true');
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).render('error', { message: 'Upload failed' });
-  }
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/artist/upload/video instead',
+  });
 };
-
-exports.renderLiveInsightsPage = async (req, res) => {
-  try {
-    const artistId = req.user.id;
-    const liveStreams = await prisma.liveStream.findMany({
-      where: { artistId },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    });
-    const liveStats = liveStreams.reduce((acc, stream) => ({
-      viewers: acc.viewers + (stream.viewerCount || 0),
-      gifts: acc.gifts + (stream.giftCount || 0),
-      revenue: acc.revenue + 0, // Will be calculated from gifts
-    }), { viewers: 0, gifts: 0, revenue: 0 });
-
-    res.render('live-insights', { 
-      liveStreams, 
-      liveStats,
-      user: req.user 
-    });
-  } catch (error) {
-    res.status(500).render('error', { message: error.message });
-  }
-};
-
 exports.handleUploadShorts = async (req, res) => {
-  try {
-    const { title, description } = req.body;
-    const artistId = req.user.id;
-    const shortFile = req.files?.['shortFile'] ? `/uploads/video/${req.files['shortFile'][0].filename}` : null;
-    const thumbnail = req.files?.['thumbnail'] ? `/uploads/images/${req.files['thumbnail'][0].filename}` : null;
-
-    if (!shortFile) {
-      return res.status(400).render('error', { message: 'Short file is required.' });
-    }
-
-    await prisma.short.create({
-      data: {
-        title,
-        description: description || '',
-        videoUrl: shortFile,
-        thumbnailUrl: thumbnail,
-        artistId,
-        playCount: 0,
-        giftCount: 0,
-        duration: 0,
-      },
-    });
-
-    res.redirect('/api/artist/my-music?success=true');
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).render('error', { message: 'Upload failed' });
-  }
+  res.status(501).json({
+    success: false,
+    error: 'Use POST /api/artist/upload/shorts instead',
+  });
 };
+

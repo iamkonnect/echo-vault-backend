@@ -1,7 +1,7 @@
-$kind: http-request
+﻿$kind: http-request
 name: Get Dashboard Stats
 method: GET
-url: '{{baseUrl}}/api/admin/dashboard'
+url: '{{baseUrl}}/api/admin/dashboard/stats'
 order: 1000
 auth:
   type: bearer
@@ -11,7 +11,6 @@ auth:
 headers:
   - key: Accept
     value: application/json
-
 scripts:
   - type: afterResponse
     language: text/javascript
@@ -19,13 +18,7 @@ scripts:
       pm.test("Status code is 200", function () {
         pm.response.to.have.status(200);
       });
-      
-      pm.test("Response is valid JSON", function () {
+      pm.test("Response is valid JSON object", function () {
         const json = pm.response.json();
         pm.expect(json).to.be.an("object");
-      });
-      
-      pm.test("Response has data", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("data");
       });

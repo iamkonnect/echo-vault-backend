@@ -18,10 +18,12 @@ const tracksRoutes = require('./src/routes/tracksRoutes');
 const liveStreamsRoutes = require('./src/routes/liveStreamsRoutes');
 const giftingRoutes = require('./src/routes/giftingRoutes');
 const paymentRoutes = require('./src/routes/paymentRoutes');
+const messagesRoutes = require('./src/routes/messagesRoutes');
+
 
 // Import middleware
-const { protect } = require('./src/middleware/authMiddleware');
-const errorHandler = require('./src/middleware/errorHandler');
+const { protect } = require('./src/middlewares/authMiddleware');
+const errorHandler = require('./src/middlewares/errorHandler');
 
 const app = express();
 const server = http.createServer(app);
@@ -98,13 +100,15 @@ app.get('/api/health', (req, res) => {
 // ============ API ROUTES ============
 
 app.use('/api/auth', authRoutes);
-app.use('/api/artist', protect, artistRoutes);
-app.use('/api/admin', protect, adminRoutes);
+app.use('/api/artist', artistRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tracks', tracksRoutes);
 app.use('/api/live', liveStreamsRoutes);
 app.use('/api/gifting', giftingRoutes);
+app.use('/api/messages', messagesRoutes);
 app.use('/api/payments', paymentRoutes);
+
 
 // ============ DASHBOARD ROUTES ============
 
@@ -150,7 +154,7 @@ io.on('connect_error', (error) => {
 // ============ SERVER INITIALIZATION ============
 
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0';
 
 async function startServer() {
   try {

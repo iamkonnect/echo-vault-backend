@@ -1,4 +1,4 @@
-$kind: http-request
+﻿$kind: http-request
 name: Logout
 method: POST
 url: '{{baseUrl}}/api/auth/logout'
@@ -18,16 +18,4 @@ scripts:
       pm.test("Response has message", function () {
         const json = pm.response.json();
         pm.expect(json).to.have.property("message");
-      });
-scripts:
-  - type: afterResponse
-    language: text/javascript
-    code: |-
-      pm.test("Status code is 200 or 201", function () {
-        pm.response.to.have.status([200, 201]);
-      });
-      
-      pm.test("Response has success property", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("success");
       });

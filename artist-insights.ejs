@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights - Artist Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .card { background-color: #1a1a1a; border: 1px solid #333; }
+        .active-link { background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid rgb(168, 85, 247); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col">
+        <div class="p-6 text-2xl font-bold text-purple-500">
+            <i class="fas fa-music mr-2"></i>EchoVault
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 py-6">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium px-2">Navigation</div>
+            
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-home mr-3 w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-compact-disc mr-3 w-5"></i>
+                <span>My Music</span>
+            </a>
+            
+            <a href="/api/artist/insights" class="flex items-center p-3 text-white active-link rounded-r-lg transition-all">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Insights</span>
+            </a>
+            
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-wallet mr-3 w-5"></i>
+                <span>Revenue</span>
+            </a>
+            
+            <a href="/api/artist/live-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-broadcast-tower mr-3 w-5"></i>
+                <span>Live Insights</span>
+            </a>
+
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-8 mb-4 font-medium px-2">Upload</div>
+            
+            <a href="/api/artist/upload-song" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-music mr-3 w-5"></i>
+                <span>Upload Song</span>
+            </a>
+            
+            <a href="/api/artist/upload-video" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Upload Video</span>
+            </a>
+            
+            <a href="/api/artist/upload-shorts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-film mr-3 w-5"></i>
+                <span>Upload Shorts</span>
+            </a>
+        </nav>
+
+        <button onclick="logout()" class="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-all border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <header class="mb-8 pb-6 border-b border-white/10">
+            <h1 class="text-4xl font-bold text-purple-400 mb-2">Analytics & Insights</h1>
+            <p class="text-gray-400">Track your performance metrics and audience engagement</p>
+        </header>
+
+        <!-- Date Range Selector -->
+        <div class="flex gap-4 mb-8">
+            <select class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500/50 transition">
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+                <option>Last 3 Months</option>
+                <option>Last 6 Months</option>
+                <option>All Time</option>
+            </select>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-400">Total Streams</h3>
+                    <i class="fas fa-play text-blue-400 text-xl"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">0</p>
+                <p class="text-sm text-gray-500 mt-2">+0% from last period</p>
+            </div>
+
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-400">Monthly Listeners</h3>
+                    <i class="fas fa-users text-purple-400 text-xl"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">0</p>
+                <p class="text-sm text-gray-500 mt-2">+0% from last period</p>
+            </div>
+
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-400">Total Followers</h3>
+                    <i class="fas fa-heart text-red-400 text-xl"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">0</p>
+                <p class="text-sm text-gray-500 mt-2">+0% from last period</p>
+            </div>
+
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-400">Avg. Engagement</h3>
+                    <i class="fas fa-chart-line text-green-400 text-xl"></i>
+                </div>
+                <p class="text-3xl font-bold text-white">0%</p>
+                <p class="text-sm text-gray-500 mt-2">+0% from last period</p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Streams Trend -->
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-purple-400"></i> Streams Trend
+                </h3>
+                <div class="h-64 bg-gradient-to-br from-white/5 to-white/10 rounded-lg flex items-center justify-center">
+                    <p class="text-white/40">Chart data will appear here</p>
+                </div>
+            </div>
+
+            <!-- Top Content -->
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-400"></i> Top Performing Content
+                </h3>
+                <div class="space-y-3">
+                    <div class="text-center py-8 text-white/40">
+                        <p>No data available yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Stats Table -->
+        <div class="card p-6 rounded-lg">
+            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <i class="fas fa-list text-purple-400"></i> Detailed Performance
+            </h3>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-white/10">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">Metric</th>
+                            <th class="px-4 py-3 text-right font-semibold">Value</th>
+                            <th class="px-4 py-3 text-right font-semibold">Change</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="px-4 py-3 text-gray-300">Total Streams</td>
+                            <td class="px-4 py-3 text-right text-white">0</td>
+                            <td class="px-4 py-3 text-right text-green-400">+0%</td>
+                        </tr>
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="px-4 py-3 text-gray-300">Monthly Listeners</td>
+                            <td class="px-4 py-3 text-right text-white">0</td>
+                            <td class="px-4 py-3 text-right text-green-400">+0%</td>
+                        </tr>
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="px-4 py-3 text-gray-300">Saves</td>
+                            <td class="px-4 py-3 text-right text-white">0</td>
+                            <td class="px-4 py-3 text-right text-green-400">+0%</td>
+                        </tr>
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="px-4 py-3 text-gray-300">Shares</td>
+                            <td class="px-4 py-3 text-right text-white">0</td>
+                            <td class="px-4 py-3 text-right text-green-400">+0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => { window.location.href = '/'; })
+                .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
+        }
+    </script>
+</body>
+</html>

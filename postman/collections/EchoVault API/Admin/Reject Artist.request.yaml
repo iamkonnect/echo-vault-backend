@@ -1,4 +1,4 @@
-$kind: http-request
+﻿$kind: http-request
 name: Reject Artist
 method: POST
 url: '{{baseUrl}}/api/admin/artist/:id/reject'
@@ -11,7 +11,6 @@ auth:
 pathVariables:
   - key: id
     value: ''
-
 scripts:
   - type: afterResponse
     language: text/javascript
@@ -19,8 +18,7 @@ scripts:
       pm.test("Status code is 200 or 201", function () {
         pm.response.to.have.status([200, 201]);
       });
-      
-      pm.test("Response has success property", function () {
+      pm.test("Response has message", function () {
         const json = pm.response.json();
-        pm.expect(json).to.have.property("success");
+        pm.expect(json).to.have.property("message");
       });

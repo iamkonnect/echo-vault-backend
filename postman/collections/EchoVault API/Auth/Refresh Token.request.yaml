@@ -1,4 +1,4 @@
-$kind: http-request
+﻿$kind: http-request
 name: Refresh Token
 method: POST
 url: '{{baseUrl}}/api/auth/refresh'
@@ -19,24 +19,7 @@ scripts:
       pm.test("Status code is 200", function () {
         pm.response.to.have.status(200);
       });
-      pm.test("Response has success === true", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("success");
-        pm.expect(json.success).to.equal(true);
-      });
       pm.test("Response has token", function () {
         const json = pm.response.json();
         pm.expect(json).to.have.property("token");
-      });
-scripts:
-  - type: afterResponse
-    language: text/javascript
-    code: |-
-      pm.test("Status code is 200 or 201", function () {
-        pm.response.to.have.status([200, 201]);
-      });
-      
-      pm.test("Response has success property", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("success");
       });

@@ -240,10 +240,10 @@ exports.refreshToken = async (req, res, next) => {
     }
 
     const decoded = verifyToken(token);
-    const newToken = generateToken(decoded.id, decoded.role);
+    const newToken = generateToken(decoded.userId, decoded.role);
     
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { id: decoded.userId },
       select: {
         id: true,
         email: true,

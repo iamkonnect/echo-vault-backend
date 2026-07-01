@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/constants.dart';
+import 'constants.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shorts Management - EchoVault Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%); color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+        .admin-sidebar { background: rgba(15,12,41,0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-72 admin-sidebar p-8 border-r border-white/5 shadow-2xl flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-xl shadow-lg">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <span class="font-black tracking-tight text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">ADMIN CENTRAL</span>
+            </div>
+            <nav class="space-y-2">
+                <div class="text-xs text-white/30 uppercase tracking-wider mb-4 font-medium">Overview</div>
+                <a href="/api/admin/dashboard" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-chart-line w-5"></i><span>Dashboard</span>
+                </a>
+                <a href="/api/admin/users" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-users w-5"></i> User Directory
+                </a>
+                
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Content Management</div>
+                <a href="/api/admin/music-management" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-music w-5"></i> Music Management
+                </a>
+                <a href="/api/admin/video-management" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-video w-5"></i> Video Management
+                </a>
+                <a href="/api/admin/shorts-management" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <i class="fas fa-film w-5"></i> Shorts Management
+                </a>
+                <a href="/api/admin/ads-management" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-bullhorn w-5"></i> Ads Management
+                </a>
+                <a href="/api/admin/slider-management" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-sliders w-5"></i> Slider Management
+                </a>
+                
+                <div class="text-xs text-white/30 uppercase tracking-wider mt-8 mb-4 font-medium">Management</div>
+                <a href="/api/admin/artist-verification" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-microphone w-5"></i> Artist Verification
+                </a>
+                <a href="/api/admin/create-admin" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-user-plus w-5"></i> Add Admin
+                </a>
+                <a href="/api/admin/payouts" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-coins w-5"></i> Payouts
+                </a>
+                <a href="/api/admin/gifts" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-gift w-5"></i> Gift Management
+                </a>
+                <a href="/api/admin/reports" class="flex items-center gap-3 p-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <i class="fas fa-flag w-5"></i> Reports
+                </a>
+            </nav>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-12 overflow-y-auto">
+        <header class="mb-16 pb-8 border-b border-white/10">
+            <h1 class="text-5xl font-black bg-gradient-to-r from-yellow-400 via-pink-400 to-yellow-600 bg-clip-text text-transparent tracking-tight mb-2">Shorts Management</h1>
+            <p class="text-xl text-white/60 font-light">Add, edit, and manage short-form video content</p>
+        </header>
+
+        <!-- Add New Short Section -->
+        <div class="glass p-12 border border-yellow-500/20 mb-12">
+            <h2 class="text-2xl font-bold mb-8 flex items-center gap-3 text-white">
+                <i class="fas fa-plus-circle text-yellow-400"></i> Add New Short
+            </h2>
+            
+            <form id="addShortForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-2">Short Title</label>
+                        <input type="text" name="title" placeholder="Enter short title" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-yellow-500/50 transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-2">Creator Name</label>
+                        <input type="text" name="creator" placeholder="Enter creator name" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-yellow-500/50 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-2">Description</label>
+                    <textarea name="description" placeholder="Enter short description (max 150 characters)" maxlength="150" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-yellow-500/50 transition h-20"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-2">Content Type</label>
+                        <select name="contentType" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500/50 transition">
+                            <option value="">Select type</option>
+                            <option value="dance">Dance</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="music">Music</option>
+                            <option value="trending">Trending</option>
+                            <option value="educational">Educational</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-2">Release Date</label>
+                        <input type="date" name="releaseDate" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500/50 transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-2">Duration (seconds)</label>
+                        <input type="number" min="1" max="120" name="duration" placeholder="60" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-yellow-500/50 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-4">Upload Short Video</label>
+                    <div class="border-2 border-dashed border-yellow-500/40 rounded-lg p-8 text-center cursor-pointer hover:border-yellow-500/60 transition" onclick="document.getElementById('shortFile').click()">
+                        <i class="fas fa-cloud-upload-alt text-yellow-400 text-4xl mb-4 block"></i>
+                        <p class="text-white/70 mb-2">Drag or click to upload short video</p>
+                        <p class="text-white/40 text-sm">MP4, WebM (Max 120 seconds, 100MB)</p>
+                        <input type="file" id="shortFile" name="shortFile" accept="video/*" class="hidden">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-4">Upload Thumbnail</label>
+                    <div class="border-2 border-dashed border-yellow-500/40 rounded-lg p-8 text-center cursor-pointer hover:border-yellow-500/60 transition" onclick="document.getElementById('shortThumbnail').click()">
+                        <i class="fas fa-image text-yellow-400 text-4xl mb-4 block"></i>
+                        <p class="text-white/70 mb-2">Drag or click to upload thumbnail</p>
+                        <p class="text-white/40 text-sm">JPG, PNG (Max 10MB)</p>
+                        <input type="file" id="shortThumbnail" name="shortThumbnail" accept="image/*" class="hidden">
+                    </div>
+                </div>
+
+                <div class="flex gap-4 justify-end">
+                    <button type="button" onclick="resetForm()" class="px-8 py-3 bg-white/10 text-white/70 hover:text-white rounded-lg transition border border-white/20">
+                        Clear
+                    </button>
+                    <button type="submit" class="px-8 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition font-medium flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Add Short
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Shorts Library Grid -->
+        <div class="glass p-8 border border-white/10">
+            <h2 class="text-2xl font-bold mb-8 flex items-center gap-3 text-white">
+                <i class="fas fa-grid-4 text-yellow-400"></i> Shorts Library
+            </h2>
+
+            <div id="shortsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="text-center py-12 col-span-full text-white/40">
+                    <i class="fas fa-film text-4xl mb-4 block"></i>
+                    <p>No shorts yet. Add your first short above!</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass p-8 rounded-2xl max-w-2xl w-full border border-yellow-500/20">
+            <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <i class="fas fa-edit text-yellow-400"></i> Edit Short
+            </h3>
+            
+            <form id="editShortForm" class="space-y-4">
+                <input type="hidden" id="editShortId" name="shortId">
+                
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-2">Title</label>
+                    <input type="text" id="editTitle" name="title" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500/50 transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-2">Creator</label>
+                    <input type="text" id="editCreator" name="creator" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500/50 transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-2">Content Type</label>
+                    <select id="editContentType" name="contentType" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500/50 transition">
+                        <option value="">Select type</option>
+                        <option value="dance">Dance</option>
+                        <option value="comedy">Comedy</option>
+                        <option value="music">Music</option>
+                        <option value="trending">Trending</option>
+                        <option value="educational">Educational</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-4 justify-end">
+                    <button type="button" onclick="closeEditModal()" class="px-6 py-2 bg-white/10 text-white/70 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function resetForm() {
+            document.getElementById('addShortForm').reset();
+        }
+
+        function openEditModal(id, title, creator, contentType) {
+            document.getElementById('editShortId').value = id;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editCreator').value = creator;
+            document.getElementById('editContentType').value = contentType;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        function deleteShort(id) {
+            if (confirm('Are you sure you want to delete this short?')) {
+                console.log('Delete short:', id);
+            }
+        }
+
+        document.getElementById('addShortForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Add short form submitted');
+            alert('Short added successfully!');
+            resetForm();
+        });
+
+        document.getElementById('editShortForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Edit short form submitted');
+            alert('Short updated successfully!');
+            closeEditModal();
+        });
+
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => { window.location.href = '/'; })
+                .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
+        }
+    </script>
+</body>
+</html>

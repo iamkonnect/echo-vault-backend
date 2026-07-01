@@ -1,0 +1,16 @@
+$kind: http-request
+name: Start Live Stream
+method: POST
+url: '{{baseUrl}}/api/live/streams/start'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "My Live Stream",
+      "description": "Live music session"
+    }

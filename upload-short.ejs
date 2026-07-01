@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Short - EchoVault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%); color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-2xl">
+        <div class="glass p-12">
+            <div class="mb-8 text-center">
+                <i class="fas fa-film text-6xl text-pink-400 mb-4"></i>
+                <h1 class="text-4xl font-bold mb-2">Upload Short</h1>
+                <p class="text-gray-400">Share a short video clip (15-60 seconds)</p>
+            </div>
+
+            <form id="uploadForm" class="space-y-6">
+                <!-- Short Title -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Short Title *</label>
+                    <input type="text" id="title" name="title" required
+                           class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-pink-400 focus:outline-none"
+                           placeholder="Enter short title">
+                </div>
+
+                <!-- Artist Name -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Artist Name *</label>
+                    <input type="text" id="artist" name="artist" required
+                           class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-pink-400 focus:outline-none"
+                           placeholder="Your artist name">
+                </div>
+
+                <!-- Duration -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Duration (seconds) *</label>
+                    <input type="number" id="duration" name="duration" required min="15" max="60"
+                           class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-pink-400 focus:outline-none"
+                           placeholder="15-60 seconds">
+                    <span class="text-xs text-gray-400 mt-1 block">Recommended: 15-60 seconds</span>
+                </div>
+
+                <!-- File Upload -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Video File (MP4, MOV) *</label>
+                    <div class="relative">
+                        <input type="file" id="file" name="file" accept="video/*" required
+                               class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:border-pink-400 focus:outline-none">
+                        <span class="text-xs text-gray-400 mt-1 block">Max file size: 500MB</span>
+                    </div>
+                </div>
+
+                <!-- Thumbnail -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Thumbnail Image</label>
+                    <input type="file" id="thumbnail" name="thumbnail" accept="image/*"
+                           class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:border-pink-400 focus:outline-none">
+                    <span class="text-xs text-gray-400 mt-1 block">Optional - Upload a thumbnail image</span>
+                </div>
+
+                <!-- Tags -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Tags</label>
+                    <input type="text" id="tags" name="tags"
+                           class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-pink-400 focus:outline-none"
+                           placeholder="Enter tags separated by commas (e.g., music, dance, funny)">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea id="description" name="description"
+                              class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-pink-400 focus:outline-none"
+                              placeholder="Describe your short video"
+                              rows="3"></textarea>
+                </div>
+
+                <!-- Upload Button -->
+                <button type="submit" 
+                        class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg transition-all">
+                    <i class="fas fa-upload mr-2"></i> Upload Short
+                </button>
+
+                <p class="text-center text-gray-400 text-sm">
+                    <a href="javascript:history.back()" class="text-pink-400 hover:underline">← Back to Dashboard</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const duration = parseInt(document.getElementById('duration').value);
+            if (duration < 15 || duration > 60) {
+                alert('Duration must be between 15 and 60 seconds');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('duration', duration);
+            formData.append('file', document.getElementById('file').files[0]);
+            
+            if (document.getElementById('thumbnail').files.length > 0) {
+                formData.append('thumbnail', document.getElementById('thumbnail').files[0]);
+            }
+
+            const token = localStorage.getItem('auth_token');
+            
+            try {
+                const response = await fetch('/api/artist/upload-short', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert('Short uploaded successfully!');
+                    window.history.back();
+                } else {
+                    alert('Upload failed: ' + await response.text());
+                }
+            } catch (error) {
+                alert('Error uploading short: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

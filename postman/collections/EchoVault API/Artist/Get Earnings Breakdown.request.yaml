@@ -1,4 +1,4 @@
-$kind: http-request
+﻿$kind: http-request
 name: Get Earnings Breakdown
 method: GET
 url: '{{baseUrl}}/api/artist/earnings'
@@ -28,21 +28,4 @@ scripts:
       pm.test("Response has breakdown.live", function () {
         const json = pm.response.json();
         pm.expect(json.breakdown).to.have.property("live");
-      });
-scripts:
-  - type: afterResponse
-    language: text/javascript
-    code: |-
-      pm.test("Status code is 200", function () {
-        pm.response.to.have.status(200);
-      });
-      
-      pm.test("Response is valid JSON", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.be.an("object");
-      });
-      
-      pm.test("Response has data", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("data");
       });

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Music - Artist Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0a0a0a; color: white; }
+        .sidebar { background-color: #121212; border-right: 1px solid #222; }
+        .card { background-color: #1a1a1a; border: 1px solid #333; }
+        .active-link { background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid rgb(168, 85, 247); }
+    </style>
+</head>
+<body class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 flex-shrink-0 flex flex-col">
+        <div class="p-6 text-2xl font-bold text-purple-500">
+            <i class="fas fa-music mr-2"></i>EchoVault
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2 py-6">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium px-2">Navigation</div>
+            
+            <a href="/api/artist/dashboard" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-home mr-3 w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/api/artist/my-music" class="flex items-center p-3 text-white active-link rounded-r-lg transition-all">
+                <i class="fas fa-compact-disc mr-3 w-5"></i>
+                <span>My Music</span>
+            </a>
+            
+            <a href="/api/artist/insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-chart-line mr-3 w-5"></i>
+                <span>Insights</span>
+            </a>
+            
+            <a href="/api/artist/revenue" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-wallet mr-3 w-5"></i>
+                <span>Revenue</span>
+            </a>
+            
+            <a href="/api/artist/live-insights" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-broadcast-tower mr-3 w-5"></i>
+                <span>Live Insights</span>
+            </a>
+
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-8 mb-4 font-medium px-2">Upload</div>
+            
+            <a href="/api/artist/upload-song" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-music mr-3 w-5"></i>
+                <span>Upload Song</span>
+            </a>
+            
+            <a href="/api/artist/upload-video" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-video mr-3 w-5"></i>
+                <span>Upload Video</span>
+            </a>
+            
+            <a href="/api/artist/upload-shorts" class="flex items-center p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <i class="fas fa-film mr-3 w-5"></i>
+                <span>Upload Shorts</span>
+            </a>
+        </nav>
+
+        <button onclick="logout()" class="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition-all border border-red-600/30">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <header class="mb-8 pb-6 border-b border-white/10">
+            <h1 class="text-4xl font-bold text-purple-400 mb-2">My Music Library</h1>
+            <p class="text-gray-400">Manage all your songs, videos, and shorts in one place</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex gap-4 mb-8 border-b border-white/10">
+            <button onclick="setTab('songs')" id="tab-songs" class="px-6 py-3 font-medium text-purple-400 border-b-2 border-purple-400">
+                <i class="fas fa-music mr-2"></i>Songs
+            </button>
+            <button onclick="setTab('videos')" id="tab-videos" class="px-6 py-3 font-medium text-gray-400 hover:text-white">
+                <i class="fas fa-video mr-2"></i>Videos
+            </button>
+            <button onclick="setTab('shorts')" id="tab-shorts" class="px-6 py-3 font-medium text-gray-400 hover:text-white">
+                <i class="fas fa-film mr-2"></i>Shorts
+            </button>
+        </div>
+
+        <!-- Songs Tab -->
+        <div id="songs-tab" class="space-y-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Your Songs</h2>
+                <a href="/api/artist/upload-song" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Upload Song
+                </a>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-white/5 border-b border-white/10">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-semibold">Song</th>
+                            <th class="px-6 py-4 text-left font-semibold">Streams</th>
+                            <th class="px-6 py-4 text-left font-semibold">Engagement</th>
+                            <th class="px-6 py-4 text-left font-semibold">Revenue</th>
+                            <th class="px-6 py-4 text-left font-semibold">Status</th>
+                            <th class="px-6 py-4 text-center font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                        <tr class="hover:bg-white/5 transition">
+                            <td colspan="6" class="px-6 py-8 text-center text-white/40">
+                                <i class="fas fa-music text-3xl mb-2 block"></i>
+                                No songs uploaded yet. <a href="/api/artist/upload-song" class="text-purple-400 hover:underline">Upload your first song</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Videos Tab -->
+        <div id="videos-tab" class="space-y-6 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Your Videos</h2>
+                <a href="/api/artist/upload-video" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Upload Video
+                </a>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-white/5 border-b border-white/10">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-semibold">Video</th>
+                            <th class="px-6 py-4 text-left font-semibold">Views</th>
+                            <th class="px-6 py-4 text-left font-semibold">Engagement</th>
+                            <th class="px-6 py-4 text-left font-semibold">Revenue</th>
+                            <th class="px-6 py-4 text-left font-semibold">Status</th>
+                            <th class="px-6 py-4 text-center font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                        <tr class="hover:bg-white/5 transition">
+                            <td colspan="6" class="px-6 py-8 text-center text-white/40">
+                                <i class="fas fa-video text-3xl mb-2 block"></i>
+                                No videos uploaded yet. <a href="/api/artist/upload-video" class="text-purple-400 hover:underline">Upload your first video</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Shorts Tab -->
+        <div id="shorts-tab" class="space-y-6 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Your Shorts</h2>
+                <a href="/api/artist/upload-shorts" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Upload Short
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="text-center py-12 col-span-full text-white/40">
+                    <i class="fas fa-film text-4xl mb-4 block"></i>
+                    <p>No shorts uploaded yet. <a href="/api/artist/upload-shorts" class="text-purple-400 hover:underline">Upload your first short</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setTab(tabName) {
+            const tabs = ['songs', 'videos', 'shorts'];
+            tabs.forEach(tab => {
+                document.getElementById(`${tab}-tab`).classList.add('hidden');
+                document.getElementById(`tab-${tab}`).classList.remove('text-purple-400', 'border-b-2', 'border-purple-400');
+                document.getElementById(`tab-${tab}`).classList.add('text-gray-400');
+            });
+            
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-gray-400');
+            document.getElementById(`tab-${tabName}`).classList.add('text-purple-400', 'border-b-2', 'border-purple-400');
+        }
+
+        function logout() {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => { window.location.href = '/'; })
+                .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
+        }
+
+        function editContent(id) {
+            console.log('Edit content:', id);
+        }
+
+        function deleteContent(id) {
+            if (confirm('Are you sure you want to delete this content?')) {
+                console.log('Delete content:', id);
+            }
+        }
+    </script>
+</body>
+</html>

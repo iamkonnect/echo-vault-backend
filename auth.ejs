@@ -151,7 +151,6 @@
         
         let isLoginMode = true;
 
-        // Real-time password matching
         function checkPasswordMatch() {
             if (!isLoginMode) {
                 const password = passwordInput.value;
@@ -185,7 +184,6 @@
             isLoginMode = !isLoginMode;
             
             if (isLoginMode) {
-                // Switch to Login
                 form.action = '/api/auth/login-dashboard';
                 usernameField.classList.add('hidden-signup');
                 nameField.classList.add('hidden-signup');
@@ -197,7 +195,6 @@
                 subtitle.innerText = 'Welcome back to the sound';
                 toggleBtn.innerHTML = "Don't have an account? <span class='text-purple-400 font-bold'>Sign Up</span>";
             } else {
-                // Switch to Sign Up
                 form.action = '/api/auth/register-dashboard';
                 usernameField.classList.remove('hidden-signup');
                 nameField.classList.remove('hidden-signup');
@@ -210,11 +207,9 @@
             }
         });
 
-        // Form submission with AJAX
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Client-side validation
             if (!isLoginMode) {
                 const username = form.elements['username'].value.trim();
                 const name = form.elements['name'].value.trim();
@@ -243,7 +238,6 @@
                 }
             }
 
-            // Submit form via AJAX
             try {
                 const formData = new FormData(form);
                 const response = await fetch(form.action, {
@@ -258,29 +252,31 @@
                     return;
                 }
 
-                // Success - redirect after a brief delay
-                showSuccess(data.message || 'Success! Redirecting...');
-                setTimeout(() => {
-                    if (isLoginMode) {
-                        // Redirect to appropriate dashboard based on role
-                        if (data.role === 'ARTIST') {
-                            window.location.href = '/artist-dashboard';
-                        } else if (['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS'].includes(data.role)) {
-                            window.location.href = '/admin-dashboard';
+                if (isLoginMode && data.token) {
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    showSuccess(data.message || 'Success! Redirecting...');
+                    setTimeout(() => {
+                        if (data.user.role === 'ARTIST') {
+                            window.location.href = '/api/artist/dashboard?token=' + encodeURIComponent(data.token);
+                        } else if (['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS'].includes(data.user.role)) {
+                            window.location.href = '/api/admin/dashboard?token=' + encodeURIComponent(data.token);
                         } else {
                             window.location.href = '/dashboard';
                         }
-                    } else {
-                        // Registration successful - redirect to login
+                    }, 1500);
+                } else {
+                    showSuccess(data.message || 'Success! Redirecting...');
+                    setTimeout(() => {
                         window.location.href = '/api/auth/login';
-                    }
-                }, 1500);
+                    }, 1500);
+                }
             } catch (error) {
                 showError('Network error: ' + error.message);
             }
         });
 
-        // Error message display
         function showError(message) {
             removeMessages();
             const errorDiv = document.createElement('div');
@@ -290,7 +286,6 @@
             form.insertBefore(errorDiv, form.firstChild);
         }
 
-        // Success message display
         function showSuccess(message) {
             removeMessages();
             const successDiv = document.createElement('div');
@@ -300,13 +295,11 @@
             form.insertBefore(successDiv, form.firstChild);
         }
 
-        // Remove existing messages
         function removeMessages() {
             const existing = form.querySelector('#error-message, #success-message');
             if (existing) existing.remove();
         }
 
-        // Show error message if redirected back with error query param
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
             showError(decodeURIComponent(urlParams.get('error')));

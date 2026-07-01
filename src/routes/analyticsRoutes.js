@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
-const { protect, authorize } = require('../controllers/authMiddleware');
+const { protect, authorize } = require('../middlewares/authMiddleware');
 
 // All analytics routes require admin authentication
 router.use(protect);

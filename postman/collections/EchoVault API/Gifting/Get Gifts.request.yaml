@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Gifts
+method: GET
+url: '{{baseUrl}}/api/gifting'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'

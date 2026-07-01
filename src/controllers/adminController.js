@@ -2,7 +2,7 @@ const prisma = require('../utils/prisma');
 const bcrypt = require('bcryptjs');
 
 async function calculatePlatformStats() {
-const stats = {
+  const stats = {
     userCount: 0,
     artistCount: 0,
     verifiedArtistCount: 0,
@@ -61,7 +61,6 @@ const stats = {
     stats.withdrawals = [];
   }
 
-  // Reports stats
   try {
     stats.totalReports = await prisma.report.count();
   } catch {}
@@ -112,7 +111,6 @@ exports.getUserDetail = async (req, res) => {
   }
 };
 
-// Get all users with details - API endpoint
 exports.getAllUsersApi = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -144,7 +142,6 @@ exports.getAllUsersApi = async (req, res) => {
   }
 };
 
-// Get all users data for page rendering
 exports.getAllUsersForPage = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -176,7 +173,6 @@ exports.getAllUsersForPage = async (req, res) => {
   }
 };
 
-// Get unverified artists data
 exports.getUnverifiedArtistsData = async () => {
   try {
     const artists = await prisma.user.findMany({
@@ -207,12 +203,10 @@ exports.getUnverifiedArtistsData = async () => {
   }
 };
 
-// Get unverified artists for verification queue
 exports.getUnverifiedArtists = async (req, res) => {
   try {
     const artists = await exports.getUnverifiedArtistsData();
 
-    // Format data for rendering
     const formattedArtists = artists.map(artist => ({
       ...artist,
       contentCount: (artist._count.songs || 0) + (artist._count.shorts || 0),
@@ -226,7 +220,6 @@ exports.getUnverifiedArtists = async (req, res) => {
   }
 };
 
-// Verify an artist
 exports.verifyArtist = async (req, res) => {
   try {
     const { id } = req.params;
@@ -276,7 +269,6 @@ exports.verifyArtist = async (req, res) => {
   }
 };
 
-// Reject/Unverify an artist
 exports.rejectArtist = async (req, res) => {
   try {
     const { id } = req.params;
@@ -324,31 +316,74 @@ exports.rejectArtist = async (req, res) => {
 
 exports.renderCreateAdminForm = (req, res) => {
   const roles = ['ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS', 'SUPPORT', 'CONTENT_MODERATOR', 'ANALYST'];
-  res.render('admin-create-admin', { roles, user: req.user, error: null });
+  const error = req.query.error || null;
+  const success = req.query.success || null;
+  res.render('admin-create-admin', { roles, user: req.user || {}, error, success });
 };
 
+// CREATE ADMIN - Fixed to handle both form and API requests with proper authorization
 exports.createAdminUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, username, password, confirmPassword, phone, role } = req.body;
+  const rolesArray = ['ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS', 'SUPPORT', 'CONTENT_MODERATOR', 'ANALYST'];
+  
+  // Verify user is authenticated (req.user should be set by protect middleware)
+  if (!req.user) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Authentication required. User not found in request.' 
+    });
+  }
+  
   try {
     // Validate input
-    if (!name || !email || !password || !role) {
-      return res.status(400).render('admin-create-admin', { 
-        error: 'All fields are required',
-        roles: ['ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS', 'SUPPORT', 'CONTENT_MODERATOR', 'ANALYST'],
-        user: req.user
+    if (!name || !email || !username || !password || !confirmPassword || !role) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'All required fields must be filled',
+        fields: ['name', 'email', 'username', 'password', 'confirmPassword', 'role']
       });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+    // Validate password match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Passwords do not match'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Password must be at least 8 characters'
+      });
+    }
+
+    // Check if user already exists by email or username
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { username }
+        ]
+      }
     });
     
     if (existingUser) {
-      return res.status(400).render('admin-create-admin', { 
-        error: 'Email already in use',
-        roles: ['ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS', 'SUPPORT', 'CONTENT_MODERATOR', 'ANALYST'],
-        user: req.user
+      const field = existingUser.email === email ? 'email' : 'username';
+      return res.status(409).json({ 
+        success: false, 
+        error: `This ${field} is already in use`
+      });
+    }
+
+    // Validate role
+    if (!rolesArray.includes(role)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid role selected',
+        validRoles: rolesArray
       });
     }
 
@@ -358,30 +393,46 @@ exports.createAdminUser = async (req, res) => {
       data: {
         name,
         email,
+        username,
         password: hashedPassword,
-        role: role === 'ADMIN' ? 'ADMIN' : 'ADMIN', // Default to ADMIN role (schema supports USER, ARTIST, ADMIN)
+        phone: phone || null,
+        role: role,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        role: true,
+        phone: true,
+        createdAt: true
+      }
     });
     
-    res.redirect('/api/admin/users?success=Admin created successfully');
+    console.log(`✅ New admin created: ${newAdmin.name} (${newAdmin.role}) by ${req.user.email}`);
+    
+    res.status(201).json({
+      success: true,
+      message: `Admin user '${newAdmin.name}' with role '${newAdmin.role}' created successfully`,
+      data: newAdmin
+    });
   } catch (error) {
     console.error('Error creating admin:', error);
-    res.status(500).render('admin-create-admin', { 
-      error: error.message || 'Failed to create admin',
-      roles: ['ADMIN', 'MANAGER', 'REPORTS_MANAGER', 'ACCOUNTS', 'SUPPORT', 'CONTENT_MODERATOR', 'ANALYST'],
-      user: req.user
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Failed to create admin user',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
 
-// Render payouts page - Enhanced for revenue tracking
 exports.renderPayoutsPage = async (req, res) => {
   try {
     let withdrawals = [];
     let totalPending = 0;
     let totalProcessed = 0;
-    let totalRevenue = 0; // Cumulative collected revenue
-    let availableRevenue = 0; // Revenue available to withdraw
+    let totalRevenue = 0;
+    let availableRevenue = 0;
     let revenueBreakdown = {
       gifts: 0,
       music: 0,
@@ -390,14 +441,12 @@ exports.renderPayoutsPage = async (req, res) => {
     };
 
     try {
-      // Get all platform fees (cumulative revenue collected)
       const allFeesAgg = await prisma.transaction.aggregate({
         where: { type: 'PLATFORM_FEE' },
         _sum: { amount: true }
       });
       totalRevenue = allFeesAgg._sum.amount || 0;
 
-      // Available revenue = Total collected - Total already withdrawn
       const completedWithdrawalsAgg = await prisma.transaction.aggregate({
         where: { type: 'WITHDRAWAL', status: 'COMPLETED' },
         _sum: { amount: true }
@@ -405,7 +454,6 @@ exports.renderPayoutsPage = async (req, res) => {
       const totalWithdrawn = completedWithdrawalsAgg._sum.amount || 0;
       availableRevenue = Math.max(0, totalRevenue - totalWithdrawn);
 
-      // Pending withdrawal requests from artists
       const rawWithdrawals = await prisma.transaction.findMany({
         where: { type: 'WITHDRAWAL' },
         include: { 
@@ -426,7 +474,6 @@ exports.renderPayoutsPage = async (req, res) => {
         requestedDate: t.createdAt
       }));
 
-      // Aggregates for pending and processed artist payouts
       const completedPayoutsAgg = await prisma.transaction.aggregate({
         where: { type: 'WITHDRAWAL', status: 'COMPLETED' },
         _sum: { amount: true }
@@ -439,7 +486,6 @@ exports.renderPayoutsPage = async (req, res) => {
       });
       totalPending = pendingPayoutsAgg._sum.amount || 0;
 
-      // Revenue breakdown by source
       const giftFeesAgg = await prisma.transaction.aggregate({
         where: { 
           type: 'PLATFORM_FEE', 
@@ -478,7 +524,6 @@ exports.renderPayoutsPage = async (req, res) => {
 
     } catch (dbErr) {
       console.warn('Payouts DB query failed:', dbErr.message);
-      // Mock data for testing
       totalRevenue = 3420.25;
       availableRevenue = 2170.25;
       totalProcessed = 1250.00;
@@ -498,7 +543,7 @@ exports.renderPayoutsPage = async (req, res) => {
     }
 
     res.render('admin-payouts', { 
-      user: req.user,
+      user: req.user || {},
       withdrawals,
       totalPending,
       totalPaidOut: totalProcessed,
@@ -512,7 +557,6 @@ exports.renderPayoutsPage = async (req, res) => {
   }
 };
 
-// Approve a payout request
 exports.approvePayout = async (req, res) => {
   try {
     const { transactionId } = req.params;
@@ -527,7 +571,6 @@ exports.approvePayout = async (req, res) => {
   }
 };
 
-// Reject a payout request
 exports.rejectPayout = async (req, res) => {
   try {
     const { transactionId } = req.params;
@@ -542,7 +585,6 @@ exports.rejectPayout = async (req, res) => {
   }
 };
 
-// Withdraw to bank (platform revenue)
 exports.withdrawToBank = async (req, res) => {
   try {
     const { amount } = req.body;
@@ -551,10 +593,8 @@ exports.withdrawToBank = async (req, res) => {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
     }
 
-    // Get the admin user (or system user)
     const adminUser = req.user || await prisma.user.findFirst({ where: { role: 'ADMIN' } });
     
-    // Create a bank withdrawal transaction
     const bankWithdrawal = await prisma.transaction.create({
       data: {
         userId: adminUser.id,
@@ -574,7 +614,6 @@ exports.withdrawToBank = async (req, res) => {
   }
 };
 
-// Request withdrawal from available revenue
 exports.requestWithdrawal = async (req, res) => {
   try {
     const { amount, description } = req.body;
@@ -603,7 +642,6 @@ exports.requestWithdrawal = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.renderReportsPage = async (req, res) => {
   try {
@@ -634,7 +672,7 @@ exports.renderReportsPage = async (req, res) => {
     ).map(([category, count]) => ({ category, count })).slice(0, 6);
 
     res.render('admin-reports', { 
-      user: req.user, 
+      user: req.user || {}, 
       stats, 
       reports, 
       reportsByCategory 
@@ -645,7 +683,6 @@ exports.renderReportsPage = async (req, res) => {
   }
 };
 
-// Resolve report
 exports.resolveReport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -662,7 +699,6 @@ exports.resolveReport = async (req, res) => {
   }
 };
 
-// Dismiss report
 exports.dismissReport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -676,7 +712,6 @@ exports.dismissReport = async (req, res) => {
   }
 };
 
-// Ban user (simple: mark as unverified + add note)
 exports.banUser = async (req, res) => {
   try {
     const { id } = req.params;

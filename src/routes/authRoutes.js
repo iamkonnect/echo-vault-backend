@@ -1,6 +1,6 @@
 const express = require('express');
 const { register, registerDashboard, login, loginDashboard, logout, refreshToken, verifyAuth } = require('../controllers/authController');
-const { protect } = require('../controllers/authMiddleware');
+const { protect } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 // GET route to render the professional login page

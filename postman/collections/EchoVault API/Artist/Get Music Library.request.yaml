@@ -1,4 +1,4 @@
-$kind: http-request
+﻿$kind: http-request
 name: Get Music Library
 method: GET
 url: '{{baseUrl}}/api/artist/music'
@@ -29,21 +29,4 @@ scripts:
         const json = pm.response.json();
         pm.expect(json).to.have.property("totalSongs");
         pm.expect(json.totalSongs).to.be.a("number");
-      });
-scripts:
-  - type: afterResponse
-    language: text/javascript
-    code: |-
-      pm.test("Status code is 200", function () {
-        pm.response.to.have.status(200);
-      });
-      
-      pm.test("Response is valid JSON", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.be.an("object");
-      });
-      
-      pm.test("Response has data", function () {
-        const json = pm.response.json();
-        pm.expect(json).to.have.property("data");
       });

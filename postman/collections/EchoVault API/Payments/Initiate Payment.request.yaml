@@ -1,0 +1,16 @@
+$kind: http-request
+name: Initiate Payment
+method: POST
+url: '{{baseUrl}}/api/payments/initiate'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "packageId": "5",
+      "amount": 19.99
+    }

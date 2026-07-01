@@ -1,0 +1,17 @@
+workspace:
+  id: 8e5fe594-cb42-4db0-889f-754077d0cfa2
+localResources:
+  environments:
+    - ..\environments\EchoVault Local.yaml
+    - ../environments/EchoVault Local.yaml
+cloudResources:
+  environments:
+    ../environments/EchoVault Local.yaml: 54124636-b3518db9-f960-429b-94ed-80b74de65020
+  collections:
+    ../postman/collections/EchoVault API - Collection Run: 54124636-18657597-db4a-4c7d-ba3b-5beee7a07468
+    ../postman/collections/EchoVault API Testing Copy: 54124636-202f8211-a97a-4961-845b-bd4dde3b2e1d
+    ../postman/collections/EchoVault API: 54124636-24d3f949-8871-4b57-966c-64075f02efaf
+    ../postman/collections/Postman API: 54124636-45626df9-d6d4-4c79-a321-cb4260607415
+    ../postman/collections/EchoVault API-1: 54124636-b14e224c-7249-4f88-be63-f9b8a3ec7bb1
+    ../postman/collections/My Collection: 54124636-cb4b350d-ba2c-47d2-a843-afbafd964bd9
+    ../postman/collections/EchoVault API Testing: 54124636-f06ef1d6-0ebe-4d20-82e4-6f588a5a5fcc

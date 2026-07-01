@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Dashboard...</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #065F46 0%, #0D9488 50%, #14B8A6 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .loader {
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .text {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .error {
+            color: #ff6b6b;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <div class="text">Loading Dashboard...</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        // Get token from localStorage
+        const token = localStorage.getItem('auth_token');
+        
+        if (!token) {
+            // No token, redirect to login
+            document.getElementById('error').textContent = 'No authentication token. Redirecting to login...';
+            setTimeout(() => {
+                window.location.href = '/api/auth/login';
+            }, 1500);
+        } else {
+            // Fetch dashboard data with token
+            const dashboardUrl = window.location.pathname.replace(/^\//, '').replace('load-', '/api/');
+            
+            fetch(dashboardUrl, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'text/html'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    document.getElementById('error').textContent = 'Authentication failed. Redirecting to login...';
+                    setTimeout(() => {
+                        window.location.href = '/api/auth/login';
+                    }, 1500);
+                } else if (!response.ok) {
+                    document.getElementById('error').textContent = 'Error loading dashboard.';
+                    setTimeout(() => {
+                        window.location.href = '/api/auth/login';
+                    }, 2000);
+                } else {
+                    return response.text();
+                }
+            })
+            .then(html => {
+                if (html) {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('error').textContent = 'Connection error. Please try again.';
+                setTimeout(() => {
+                    window.location.href = '/api/auth/login';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

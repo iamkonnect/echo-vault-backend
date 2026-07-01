@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Coin Packages
+method: GET
+url: '{{baseUrl}}/api/payments/coin-packages'
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'

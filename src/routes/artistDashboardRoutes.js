@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, authorize } = require('../controllers/authMiddleware');
+const { protect, authorize } = require('../middlewares/authMiddleware');
 const artistController = require('../controllers/artistController');
 
 // Apply auth middleware to all dashboard routes

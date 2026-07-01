@@ -1,9 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
+const { protect, authorize } = require('../middlewares/authMiddleware');
+const { uploadTrack } = require('../utils/multerTracksUpload');
+const tracksController = require('../controllers/tracksController');
+
+// POST /api/tracks/upload - Flutter compatibility endpoint (creates an audio Song)
+// Only ARTIST/ADMIN can upload (music upload is artist/admin-only on the frontend)
+// Expects multipart/form-data with field name: audioFile
+router.post('/upload', protect, authorize(['ARTIST','ADMIN']), uploadTrack.single('audioFile'), tracksController.uploadTrack);
+
+
 
 // GET /api/tracks/trending - Trending videos/shorts for home feed
 router.get('/trending', async (req, res) => {
+
   try {
     const { limit = 10, offset = 0 } = req.query;
 

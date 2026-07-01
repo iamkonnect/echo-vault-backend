@@ -1,0 +1,19 @@
+$kind: http-request
+name: Send Gift
+method: POST
+url: '{{baseUrl}}/api/gifting/send'
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "receiverId": "artist_id_here",
+      "amount": 10,
+      "quantity": 1,
+      "giftId": "gift_id_here",
+      "streamId": "stream_id_here"
+    }

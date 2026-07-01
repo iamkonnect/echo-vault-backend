@@ -5,3 +5,10 @@ workspace:
 localResources:
   collections:
     - ..\EchoVault_API_Testing.postman_collection.json
+  docs:
+    - ..\postman\TESTING_GUIDE.md
+    - ..\VISUAL_COMPARISON_GUIDE.md
+    - ..\postman\README.md
+    - ..\postman\SETUP_COMPLETE.md
+    - ..\USER_VIEW_QUICK_TEST.md
+.md
