@@ -1,0 +1,31 @@
+services:
+  app:
+    image: iamkonnect/echo-vault-backend:latest
+    working_dir: /app
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CLIENT_URL: ${CLIENT_URL}
+    expose:
+      - "5000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.echo-vault.rule=Host(`admin.echovaultz.com`)
+      - traefik.http.routers.echo-vault.entrypoints=websecure
+      - traefik.http.routers.echo-vault.tls=true
+      - traefik.http.services.echo-vault.loadbalancer.server.port=5000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - echo-vault-network
+
+networks:
+  echo-vault-network:
+    driver: bridge
