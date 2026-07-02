@@ -2,6 +2,7 @@ services:
   app:
     image: iamkonnect/echo-vault-backend:latest
     working_dir: /app
+    command: sh -lc "npx prisma generate && node server.js"
     environment:
       NODE_ENV: production
       PORT: 5000
