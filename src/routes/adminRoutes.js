@@ -6,8 +6,8 @@ const { protect, authorize } = require('../middlewares/authMiddleware');
 const { verifyToken } = require('../utils/jwt');
 const bcrypt = require('bcryptjs');
 
-// Admin Dashboard - PUBLIC (for development)
-router.get('/dashboard', async (req, res) => {
+// Admin Dashboard - PROTECTED (requires auth)
+router.get('/dashboard', protect, authorize(['ADMIN']), async (req, res) => {
   try {
     const stats = {
       revenue: 0,
@@ -21,28 +21,7 @@ router.get('/dashboard', async (req, res) => {
       reportsCount: 0
     };
     
-    let user = null;
-    let token = null;
-    
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.query.token) {
-      token = req.query.token;
-    } else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
-    
-    if (token) {
-      try {
-        const decoded = verifyToken(token);
-        user = await prisma.user.findUnique({
-          where: { id: decoded.userId },
-          select: { id: true, email: true, name: true, role: true }
-        });
-      } catch (e) {
-        // Token invalid, continue as guest
-      }
-    }
+    const user = req.user; // Get authenticated user from middleware
     
     if (req.headers.accept && req.headers.accept.includes('application/json')) {
       return res.json(stats);
