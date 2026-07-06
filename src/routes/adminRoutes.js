@@ -357,19 +357,72 @@ router.get('/gifts', async (req, res) => {
   }
 });
 
-// Gift creation route
+// Gift creation route - CREATE GiftTemplate in database
 router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => {
   try {
-    const { name, price, actualAmount } = req.body;
+    const { name, price, actualAmount, icon } = req.body;
     
     if (!name || !price || !actualAmount) {
-      return res.status(400).json({ message: 'Missing required fields' });
+      return res.status(400).json({ success: false, message: 'Missing required fields: name, price, actualAmount' });
     }
 
-    res.json({ success: true, message: 'Gift created successfully', gift: { name, price, actualAmount } });
+    // Create gift template in database
+    const newGift = await prisma.giftTemplate.create({
+      data: {
+        name: name,
+        amount: parseFloat(actualAmount),
+        price: parseFloat(price),
+        icon: icon || '🎁',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        amount: true,
+        price: true,
+        icon: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    console.log(`✅ New gift template created: ${newGift.name} by ${req.user.email}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Gift created successfully',
+      data: newGift,
+    });
   } catch (error) {
     console.error('Gift creation error:', error);
-    res.status(500).json({ message: 'Failed to create gift', error: error.message });
+    res.status(500).json({ success: false, message: 'Failed to create gift', error: error.message });
+  }
+});
+
+// GET API endpoint to fetch all gifts (for admin management)
+router.get('/gifts/api', protect, authorize(['ADMIN']), async (req, res) => {
+  try {
+    const gifts = await prisma.giftTemplate.findMany({
+      orderBy: { amount: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        amount: true,
+        price: true,
+        icon: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: gifts,
+      count: gifts.length,
+    });
+  } catch (error) {
+    console.error('Error fetching gifts:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch gifts', error: error.message });
   }
 });
 
