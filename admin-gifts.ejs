@@ -74,10 +74,14 @@
             <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-white">
                 <i class="fas fa-plus-circle text-emerald-400"></i> Create New Gift
             </h2>
-            <form id="giftForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <form id="giftForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Gift Name</label>
                     <input type="text" name="name" id="giftName" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="e.g. Golden Mic" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/70 mb-2">Icon (Emoji)</label>
+                    <input type="text" name="icon" id="giftIcon" maxlength="2" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition text-center text-2xl" placeholder="🎁" value="🎁">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Display Price ($)</label>
@@ -108,18 +112,35 @@
     </main>
 
     <script>
-        // Get token from cookie or localStorage
+        // Get token from localStorage or sessionStorage
         function getAuthToken() {
-            // Try to get from localStorage first
-            const token = localStorage.getItem('token');
-            if (token) return token;
+            // Try localStorage first
+            let token = localStorage.getItem('token');
+            if (token) {
+                console.log('Token found in localStorage');
+                return token;
+            }
             
-            // Try to get from cookie
+            // Try sessionStorage
+            token = sessionStorage.getItem('token');
+            if (token) {
+                console.log('Token found in sessionStorage');
+                return token;
+            }
+            
+            // Try cookie
             const cookieToken = document.cookie
                 .split('; ')
                 .find(row => row.startsWith('token='));
             
-            return cookieToken ? cookieToken.split('=')[1] : null;
+            if (cookieToken) {
+                token = cookieToken.split('=')[1];
+                console.log('Token found in cookie');
+                return token;
+            }
+            
+            console.log('No token found anywhere');
+            return null;
         }
 
         // Handle form submission with AJAX
@@ -127,12 +148,13 @@
             e.preventDefault();
             
             const name = document.getElementById('giftName').value;
+            const icon = document.getElementById('giftIcon').value;
             const price = document.getElementById('giftPrice').value;
             const actualAmount = document.getElementById('giftAmount').value;
             const token = getAuthToken();
             
-            console.log('Submitting gift:', { name, price, actualAmount });
-            console.log('Auth token:', token ? 'present' : 'missing');
+            console.log('Submitting gift:', { name, icon, price, actualAmount });
+            console.log('Token:', token ? 'present' : 'missing');
             
             if (!token) {
                 showError('Authentication token not found. Please login again.');
@@ -148,18 +170,21 @@
                     },
                     body: JSON.stringify({
                         name,
+                        icon: icon || '🎁',
                         price: parseFloat(price),
                         actualAmount: parseFloat(actualAmount)
                     })
                 });
                 
                 const data = await response.json();
-                console.log('Response:', data);
+                console.log('Response status:', response.status);
+                console.log('Response data:', data);
                 
                 if (response.ok && data.success) {
                     document.getElementById('successMessage').classList.remove('hidden');
                     document.getElementById('errorMessage').classList.add('hidden');
                     document.getElementById('giftForm').reset();
+                    document.getElementById('giftIcon').value = '🎁';
                     
                     loadGifts();
                     
@@ -184,6 +209,11 @@
         async function loadGifts() {
             try {
                 const token = getAuthToken();
+                if (!token) {
+                    console.log('No token for loading gifts');
+                    return;
+                }
+                
                 const response = await fetch('/api/admin/gifts/api', {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -232,12 +262,20 @@
         
         function logout() {
             localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
                 .then(() => { window.location.href = '/'; })
                 .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
         }
         
-        window.addEventListener('load', loadGifts);
+        window.addEventListener('load', () => {
+            console.log('Page loaded, checking for token...');
+            const token = getAuthToken();
+            if (!token) {
+                console.log('No token found on page load');
+            }
+            loadGifts();
+        });
     </script>
 </body>
 </html>
