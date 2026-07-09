@@ -113,38 +113,8 @@
     </main>
 
     <script>
-        // Get token from localStorage or sessionStorage
-        function getAuthToken() {
-            // Try localStorage first
-            let token = localStorage.getItem('token');
-            if (token) {
-                console.log('Token found in localStorage');
-                return token;
-            }
-            
-            // Try sessionStorage
-            token = sessionStorage.getItem('token');
-            if (token) {
-                console.log('Token found in sessionStorage');
-                return token;
-            }
-            
-            // Try cookie
-            const cookieToken = document.cookie
-                .split('; ')
-                .find(row => row.startsWith('token='));
-            
-            if (cookieToken) {
-                token = cookieToken.split('=')[1];
-                console.log('Token found in cookie');
-                return token;
-            }
-            
-            console.log('No token found anywhere');
-            return null;
-        }
-
         // Handle form submission with FormData (for file upload)
+        // Uses cookie-based authentication automatically with credentials: 'include'
         document.getElementById('giftForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -152,15 +122,8 @@
             const iconFile = document.getElementById('giftIcon').files[0];
             const price = document.getElementById('giftPrice').value;
             const actualAmount = document.getElementById('giftAmount').value;
-            const token = getAuthToken();
             
             console.log('Submitting gift:', { name, iconFile: iconFile?.name, price, actualAmount });
-            console.log('Token:', token ? 'present' : 'missing');
-            
-            if (!token) {
-                showError('Authentication token not found. Please login again.');
-                return;
-            }
             
             if (!iconFile) {
                 showError('Please select an icon file');
@@ -175,11 +138,10 @@
                 formData.append('price', parseFloat(price));
                 formData.append('actualAmount', parseFloat(actualAmount));
                 
+                console.log('Sending request with credentials...');
                 const response = await fetch('/api/admin/gifts/create', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
+                    credentials: 'include', // Send httpOnly cookies automatically
                     body: formData
                 });
                 
@@ -214,16 +176,9 @@
         
         async function loadGifts() {
             try {
-                const token = getAuthToken();
-                if (!token) {
-                    console.log('No token for loading gifts');
-                    return;
-                }
-                
+                console.log('Loading gifts...');
                 const response = await fetch('/api/admin/gifts/api', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    credentials: 'include' // Send httpOnly cookies automatically
                 });
                 const data = await response.json();
                 
@@ -280,11 +235,7 @@
         }
         
         window.addEventListener('load', () => {
-            console.log('Page loaded, checking for token...');
-            const token = getAuthToken();
-            if (!token) {
-                console.log('No token found on page load');
-            }
+            console.log('Page loaded, loading gifts...');
             loadGifts();
         });
     </script>
