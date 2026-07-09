@@ -48,8 +48,8 @@
             <div class="pt-16">
                 <h3 class="text-xl lg:text-2xl font-bold text-white mb-2">Artist Login</h3>
                 <p class="text-purple-300 mb-8 opacity-90 text-center">Music dashboard & earnings</p>
-                <form action="/api/auth/login-dashboard" method="POST" class="space-y-5">
-                    <input type="hidden" name="role" value="ARTIST">
+                <div id="artistError" class="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm hidden"></div>
+                <form id="artistLoginForm" class="space-y-5">
                     <div class="glass-input flex items-center px-4 py-3 rounded-xl">
                         <i class="fas fa-envelope text-white/40 mr-3"></i>
                         <input type="email" name="email" placeholder="Email" required class="bg-transparent flex-1 py-2 text-white placeholder-white/50">
@@ -68,7 +68,7 @@
             </div>
         </div>
 
-        <!-- Admin Login (unchanged) -->
+        <!-- Admin Login -->
         <div class="glass p-8 lg:p-10 flex-1 max-w-lg shadow-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-b from-emerald-500/5 relative">
             <div class="w-14 h-14 bg-gradient-to-br from-emerald-400/40 to-teal-400/40 rounded-xl flex items-center justify-center mb-5 hover:rotate-12 transition-transform duration-300 absolute -top-8 left-1/2 transform -translate-x-1/2 shadow-lg">
                 <i class="fas fa-shield-alt text-lg text-emerald-200"></i>
@@ -76,8 +76,8 @@
             <div class="pt-16">
                 <h3 class="text-xl lg:text-2xl font-bold text-white mb-2">Admin Login</h3>
                 <p class="text-emerald-300 mb-8 opacity-90 text-center">Platform management</p>
-                <form action="/api/auth/login-dashboard" method="POST" class="space-y-5">
-                    <input type="hidden" name="role" value="ADMIN">
+                <div id="adminError" class="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm hidden"></div>
+                <form id="adminLoginForm" class="space-y-5">
                     <div class="glass-input flex items-center px-4 py-3 rounded-xl">
                         <i class="fas fa-envelope text-white/40 mr-3"></i>
                         <input type="email" name="email" placeholder="Email" required class="bg-transparent flex-1 py-2 text-white placeholder-white/50">
@@ -93,5 +93,79 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Handle Artist Login
+        document.getElementById('artistLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            const errorDiv = document.getElementById('artistError');
+            
+            try {
+                const response = await fetch('/api/auth/login-dashboard', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    // Store token in localStorage and sessionStorage
+                    localStorage.setItem('token', data.token);
+                    sessionStorage.setItem('token', data.token);
+                    console.log('Token saved for artist');
+                    
+                    // Redirect to dashboard
+                    window.location.href = data.redirectTo || '/api/artist/dashboard';
+                } else {
+                    errorDiv.textContent = data.message || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // Handle Admin Login
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            const errorDiv = document.getElementById('adminError');
+            
+            try {
+                const response = await fetch('/api/auth/login-dashboard', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    // Store token in localStorage and sessionStorage
+                    localStorage.setItem('token', data.token);
+                    sessionStorage.setItem('token', data.token);
+                    console.log('Token saved for admin');
+                    
+                    // Redirect to dashboard
+                    window.location.href = data.redirectTo || '/api/admin/dashboard';
+                } else {
+                    errorDiv.textContent = data.message || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
