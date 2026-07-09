@@ -385,11 +385,11 @@ router.get('/gifts', async (req, res) => {
   try {
     // Fetch existing gifts from database
     const gifts = await prisma.giftTemplate.findMany({
-      orderBy: { amount: 'asc' },
+      orderBy: { actualAmount: 'asc' },
       select: {
         id: true,
         name: true,
-        amount: true,
+        actualAmount: true,
         price: true,
         icon: true,
         isActive: true,
@@ -505,11 +505,11 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), upload.single('icon'
 router.get('/gifts/api', protect, authorize(['ADMIN']), async (req, res) => {
   try {
     const gifts = await prisma.giftTemplate.findMany({
-      orderBy: { amount: 'asc' },
+      orderBy: { actualAmount: 'asc' },
       select: {
         id: true,
         name: true,
-        amount: true,
+        actualAmount: true,
         price: true,
         icon: true,
         isActive: true,
