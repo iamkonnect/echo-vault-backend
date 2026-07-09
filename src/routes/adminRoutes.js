@@ -5,6 +5,38 @@ const adminController = require('../controllers/adminController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 const { verifyToken } = require('../utils/jwt');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Setup multer for file uploads
+const giftIconDir = path.join(__dirname, '../../public/gift-icons');
+if (!fs.existsSync(giftIconDir)) {
+  fs.mkdirSync(giftIconDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, giftIconDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'gift-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/png', 'image/gif', 'image/jpeg', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PNG, GIF, JPEG, and WebP images are allowed'));
+    }
+  },
+  limits: { fileSize: 2 * 1024 * 1024 } // 2MB max
+});
 
 // Admin Dashboard - PROTECTED (requires auth)
 router.get('/dashboard', protect, authorize(['ADMIN']), async (req, res) => {
@@ -371,78 +403,63 @@ router.get('/gifts', async (req, res) => {
   }
 });
 
-// Gift creation route - MUST use JSON content-type and have valid token
-router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => {
+// Gift creation route with file upload
+router.post('/gifts/create', protect, authorize(['ADMIN']), upload.single('icon'), async (req, res) => {
   try {
     console.log('Gift creation request received');
     console.log('User:', req.user);
-    console.log('Headers:', req.headers);
     console.log('Body:', req.body);
-    console.log('Query:', req.query);
+    console.log('File:', req.file);
     
-    // Extract fields - try multiple sources
-    let name = req.body.name;
-    let price = req.body.price;
-    let actualAmount = req.body.actualAmount;
-    let icon = req.body.icon;
-    
-    console.log('Extracted values:', { name, price, actualAmount, icon });
+    const { name, price, actualAmount } = req.body;
     
     // Validate required fields
     if (!name || name.trim() === '') {
-      console.log('Missing name');
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required field: name',
-        received: { name, price, actualAmount }
+        message: 'Gift name is required'
       });
     }
     
     if (!price || price === '') {
-      console.log('Missing price');
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required field: price',
-        received: { name, price, actualAmount }
+        message: 'Price is required'
       });
     }
     
     if (!actualAmount || actualAmount === '') {
-      console.log('Missing actualAmount');
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required field: actualAmount',
-        received: { name, price, actualAmount }
-      });
-    }
-
-    // Parse numeric values
-    const parsedPrice = parseFloat(price);
-    const parsedAmount = parseFloat(actualAmount);
-
-    // Validate parsed numbers
-    if (isNaN(parsedPrice)) {
-      console.log('Invalid price:', price);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Price must be a valid number',
-        received: { price }
+        message: 'Actual amount is required'
       });
     }
     
-    if (isNaN(parsedAmount)) {
-      console.log('Invalid actualAmount:', actualAmount);
+    if (!req.file) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Actual Amount must be a valid number',
-        received: { actualAmount }
+        message: 'Icon file is required'
       });
     }
 
-    // Use emoji icon as default or provided icon string
-    const giftIcon = icon || '🎁';
+    const parsedPrice = parseFloat(price);
+    const parsedAmount = parseFloat(actualAmount);
 
-    console.log('Creating gift with:', { name, price: parsedPrice, amount: parsedAmount, icon: giftIcon });
+    if (isNaN(parsedPrice) || isNaN(parsedAmount)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Price and amount must be valid numbers'
+      });
+    }
+
+    // Store the file path relative to public folder
+    const iconPath = `/gift-icons/${req.file.filename}`;
+
+    console.log('Creating gift with:', { name, price: parsedPrice, amount: parsedAmount, icon: iconPath });
 
     // Create gift template in database
     const newGift = await prisma.giftTemplate.create({
@@ -450,7 +467,7 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => 
         name: String(name).trim(),
         amount: parsedAmount,
         price: parsedPrice,
-        icon: String(giftIcon),
+        icon: iconPath,
         isActive: true,
       },
       select: {
@@ -464,7 +481,7 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => 
       },
     });
 
-    console.log(`✅ New gift template created: ${newGift.name} ($${newGift.price}) by ${req.user.email}`);
+    console.log(`✅ New gift created: ${newGift.name} ($${newGift.price}) by ${req.user.email}`);
 
     res.status(201).json({
       success: true,
@@ -472,6 +489,9 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => 
       data: newGift,
     });
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     console.error('Gift creation error:', error);
     res.status(500).json({ 
       success: false, 
