@@ -61,6 +61,14 @@ app.use(helmet({
   contentSecurityPolicy: false, // Required to allow Tailwind CDN to load styles
 }));
 
+// DEBUG: Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  next();
+});
+
 // CORS setup with comprehensive origins
 app.use(cors({
   origin: [
