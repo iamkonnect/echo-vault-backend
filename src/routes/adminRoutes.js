@@ -371,41 +371,78 @@ router.get('/gifts', async (req, res) => {
   }
 });
 
-// Gift creation route - FIXED to handle form data properly
-// Accepts EITHER multipart form-data OR JSON body
+// Gift creation route - MUST use JSON content-type and have valid token
 router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => {
   try {
-    // Extract fields from req.body (works for both urlencoded and JSON)
-    let { name, price, actualAmount, icon } = req.body;
+    console.log('Gift creation request received');
+    console.log('User:', req.user);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('Query:', req.query);
     
-    // Log what we received for debugging
-    console.log('Gift creation received:', { name, price, actualAmount, icon, keys: Object.keys(req.body) });
+    // Extract fields - try multiple sources
+    let name = req.body.name;
+    let price = req.body.price;
+    let actualAmount = req.body.actualAmount;
+    let icon = req.body.icon;
+    
+    console.log('Extracted values:', { name, price, actualAmount, icon });
     
     // Validate required fields
-    if (!name || !price || !actualAmount) {
-      console.log('Missing fields - name:', name, 'price:', price, 'actualAmount:', actualAmount);
+    if (!name || name.trim() === '') {
+      console.log('Missing name');
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required fields: name, price, actualAmount',
+        message: 'Missing required field: name',
         received: { name, price, actualAmount }
       });
     }
-
-    // Use emoji icon as default or provided icon string
-    const giftIcon = icon || '🎁';
+    
+    if (!price || price === '') {
+      console.log('Missing price');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required field: price',
+        received: { name, price, actualAmount }
+      });
+    }
+    
+    if (!actualAmount || actualAmount === '') {
+      console.log('Missing actualAmount');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required field: actualAmount',
+        received: { name, price, actualAmount }
+      });
+    }
 
     // Parse numeric values
     const parsedPrice = parseFloat(price);
     const parsedAmount = parseFloat(actualAmount);
 
     // Validate parsed numbers
-    if (isNaN(parsedPrice) || isNaN(parsedAmount)) {
+    if (isNaN(parsedPrice)) {
+      console.log('Invalid price:', price);
       return res.status(400).json({ 
         success: false, 
-        message: 'Price and actualAmount must be valid numbers',
-        received: { price, actualAmount }
+        message: 'Price must be a valid number',
+        received: { price }
       });
     }
+    
+    if (isNaN(parsedAmount)) {
+      console.log('Invalid actualAmount:', actualAmount);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Actual Amount must be a valid number',
+        received: { actualAmount }
+      });
+    }
+
+    // Use emoji icon as default or provided icon string
+    const giftIcon = icon || '🎁';
+
+    console.log('Creating gift with:', { name, price: parsedPrice, amount: parsedAmount, icon: giftIcon });
 
     // Create gift template in database
     const newGift = await prisma.giftTemplate.create({
