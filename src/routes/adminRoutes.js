@@ -351,28 +351,69 @@ router.get('/payouts', async (req, res) => {
 
 router.get('/gifts', async (req, res) => {
   try {
-    res.render('admin-gifts', { user: null, gifts: [] });
+    // Fetch existing gifts from database
+    const gifts = await prisma.giftTemplate.findMany({
+      orderBy: { amount: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        amount: true,
+        price: true,
+        icon: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+    
+    res.render('admin-gifts', { user: null, gifts: gifts });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Gift creation route - CREATE GiftTemplate in database
+// Gift creation route - FIXED to handle form data properly
+// Accepts EITHER multipart form-data OR JSON body
 router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => {
   try {
-    const { name, price, actualAmount, icon } = req.body;
+    // Extract fields from req.body (works for both urlencoded and JSON)
+    let { name, price, actualAmount, icon } = req.body;
     
+    // Log what we received for debugging
+    console.log('Gift creation received:', { name, price, actualAmount, icon, keys: Object.keys(req.body) });
+    
+    // Validate required fields
     if (!name || !price || !actualAmount) {
-      return res.status(400).json({ success: false, message: 'Missing required fields: name, price, actualAmount' });
+      console.log('Missing fields - name:', name, 'price:', price, 'actualAmount:', actualAmount);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields: name, price, actualAmount',
+        received: { name, price, actualAmount }
+      });
+    }
+
+    // Use emoji icon as default or provided icon string
+    const giftIcon = icon || '🎁';
+
+    // Parse numeric values
+    const parsedPrice = parseFloat(price);
+    const parsedAmount = parseFloat(actualAmount);
+
+    // Validate parsed numbers
+    if (isNaN(parsedPrice) || isNaN(parsedAmount)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Price and actualAmount must be valid numbers',
+        received: { price, actualAmount }
+      });
     }
 
     // Create gift template in database
     const newGift = await prisma.giftTemplate.create({
       data: {
-        name: name,
-        amount: parseFloat(actualAmount),
-        price: parseFloat(price),
-        icon: icon || '🎁',
+        name: String(name).trim(),
+        amount: parsedAmount,
+        price: parsedPrice,
+        icon: String(giftIcon),
         isActive: true,
       },
       select: {
@@ -386,7 +427,7 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => 
       },
     });
 
-    console.log(`✅ New gift template created: ${newGift.name} by ${req.user.email}`);
+    console.log(`✅ New gift template created: ${newGift.name} ($${newGift.price}) by ${req.user.email}`);
 
     res.status(201).json({
       success: true,
@@ -395,7 +436,11 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), async (req, res) => 
     });
   } catch (error) {
     console.error('Gift creation error:', error);
-    res.status(500).json({ success: false, message: 'Failed to create gift', error: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create gift', 
+      error: error.message 
+    });
   }
 });
 
