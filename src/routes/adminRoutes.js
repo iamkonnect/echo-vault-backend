@@ -465,7 +465,7 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), upload.single('icon'
     const newGift = await prisma.giftTemplate.create({
       data: {
         name: String(name).trim(),
-        amount: parsedAmount,
+        actualAmount: parsedAmount,
         price: parsedPrice,
         icon: iconPath,
         isActive: true,
@@ -473,7 +473,7 @@ router.post('/gifts/create', protect, authorize(['ADMIN']), upload.single('icon'
       select: {
         id: true,
         name: true,
-        amount: true,
+        actualAmount: true,
         price: true,
         icon: true,
         isActive: true,
