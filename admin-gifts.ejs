@@ -73,19 +73,14 @@
             <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-white">
                 <i class="fas fa-plus-circle text-emerald-400"></i> Create New Gift
             </h2>
-            <form action="/api/admin/gifts/create" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <form action="/api/admin/gifts/create" method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Gift Name</label>
                     <input type="text" name="name" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="e.g. Golden Mic" required>
                     <small class="text-white/40 text-xs mt-1">Unique identifier</small>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-white/70 mb-2">Icon (GIF/PNG)</label>
-                    <input type="file" name="icon" accept=".gif,.png,image/gif,image/png" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition text-xs" required>
-                    <small class="text-white/40 text-xs mt-1">GIF or PNG format (max 2MB)</small>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-white/70 mb-2">Display Price</label>
+                    <label class="block text-sm font-medium text-white/70 mb-2">Display Price ($)</label>
                     <input type="number" step="0.01" name="price" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
                     <small class="text-white/40 text-xs mt-1">What users see</small>
                 </div>
@@ -141,9 +136,6 @@
                                 <th class="px-4 py-3 text-left font-semibold text-white">Gift Name</th>
                                 <th class="px-4 py-3 text-left font-semibold text-white">Display Price</th>
                                 <th class="px-4 py-3 text-left font-semibold text-white">Actual Value</th>
-                                <th class="px-4 py-3 text-center font-semibold text-white">Artist</th>
-                                <th class="px-4 py-3 text-center font-semibold text-white">Creator</th>
-                                <th class="px-4 py-3 text-center font-semibold text-white">Admin</th>
                                 <th class="px-4 py-3 text-left font-semibold text-white">Created</th>
                                 <th class="px-4 py-3 text-center font-semibold text-white">Action</th>
                             </tr>
@@ -151,13 +143,10 @@
                         <tbody>
                             <% gifts.forEach(gift => { %>
                                 <tr class="border-t border-white/10 hover:bg-white/5 transition">
-                                    <td class="px-4 py-3"><img src="<%= gift.icon %>" alt="<%= gift.name %>" style="width: 40px; height: 40px; object-fit: contain;"></td>
+                                    <td class="px-4 py-3"><span class="text-2xl"><%= gift.icon %></span></td>
                                     <td class="px-4 py-3 text-white font-medium"><%= gift.name %></td>
                                     <td class="px-4 py-3 text-white/70">$<%= parseFloat(gift.price).toFixed(2) %></td>
-                                    <td class="px-4 py-3 text-emerald-400 font-bold">$<%= parseFloat(gift.actualAmount).toFixed(2) %></td>
-                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs font-bold"><%= (gift.artistShare * 100).toFixed(0) %>%</span></td>
-                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-bold"><%= (gift.creatorShare * 100).toFixed(0) %>%</span></td>
-                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs font-bold"><%= (gift.adminShare * 100).toFixed(0) %>%</span></td>
+                                    <td class="px-4 py-3 text-emerald-400 font-bold">$<%= parseFloat(gift.amount).toFixed(2) %></td>
                                     <td class="px-4 py-3 text-white/60 text-xs"><%= new Date(gift.createdAt).toLocaleDateString() %></td>
                                     <td class="px-4 py-3 text-center">
                                         <form action="/api/admin/gifts/<%= gift.id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Remove this gift? This action cannot be undone.')">
