@@ -12,7 +12,7 @@
     </style>
 </head>
 <body class="flex min-h-screen">
-    <!-- Sidebar (Same as Dashboard) -->
+    <!-- Sidebar -->
     <aside class="w-72 admin-sidebar p-8 border-r border-white/5 shadow-2xl flex flex-col justify-between">
         <div>
             <div class="flex items-center gap-3 mb-12 pb-8 border-b border-white/10">
@@ -57,7 +57,7 @@
         <header class="flex justify-between items-center mb-12 pb-8 border-b border-white/10">
             <div>
                 <h1 class="text-5xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 bg-clip-text text-transparent tracking-tight mb-2">🎁 Gift Management</h1>
-                <p class="text-xl text-white/60 font-light">Create, manage, and configure platform gifts with revenue splits</p>
+                <p class="text-xl text-white/60 font-light">Create, manage, and configure platform gifts</p>
             </div>
         </header>
 
@@ -78,17 +78,14 @@
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Gift Name</label>
                     <input type="text" name="name" id="giftName" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="e.g. Golden Mic" required>
-                    <small class="text-white/40 text-xs mt-1">Unique identifier</small>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Display Price ($)</label>
                     <input type="number" step="0.01" name="price" id="giftPrice" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
-                    <small class="text-white/40 text-xs mt-1">What users see</small>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Actual Value ($)</label>
                     <input type="number" step="0.01" name="actualAmount" id="giftAmount" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
-                    <small class="text-white/40 text-xs mt-1">For revenue split</small>
                 </div>
                 <div class="flex flex-col justify-end">
                     <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105">
@@ -96,31 +93,6 @@
                     </button>
                 </div>
             </form>
-            
-            <!-- Revenue Split Info -->
-            <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
-                <div class="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
-                    <div class="p-2 bg-emerald-500/20 rounded"><i class="fas fa-user text-emerald-400"></i></div>
-                    <div>
-                        <p class="text-xs text-white/60">Default Artist</p>
-                        <p class="text-sm font-bold text-emerald-300">40%</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
-                    <div class="p-2 bg-blue-500/20 rounded"><i class="fas fa-play text-blue-400"></i></div>
-                    <div>
-                        <p class="text-xs text-white/60">Default Creator</p>
-                        <p class="text-sm font-bold text-blue-300">40%</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 p-3 bg-white/5 rounded-lg">
-                    <div class="p-2 bg-purple-500/20 rounded"><i class="fas fa-building text-purple-400"></i></div>
-                    <div>
-                        <p class="text-xs text-white/60">Default Platform</p>
-                        <p class="text-sm font-bold text-purple-300">20%</p>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Existing Gifts -->
@@ -136,6 +108,20 @@
     </main>
 
     <script>
+        // Get token from cookie or localStorage
+        function getAuthToken() {
+            // Try to get from localStorage first
+            const token = localStorage.getItem('token');
+            if (token) return token;
+            
+            // Try to get from cookie
+            const cookieToken = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('token='));
+            
+            return cookieToken ? cookieToken.split('=')[1] : null;
+        }
+
         // Handle form submission with AJAX
         document.getElementById('giftForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -143,17 +129,28 @@
             const name = document.getElementById('giftName').value;
             const price = document.getElementById('giftPrice').value;
             const actualAmount = document.getElementById('giftAmount').value;
+            const token = getAuthToken();
             
             console.log('Submitting gift:', { name, price, actualAmount });
+            console.log('Auth token:', token ? 'present' : 'missing');
+            
+            if (!token) {
+                showError('Authentication token not found. Please login again.');
+                return;
+            }
             
             try {
                 const response = await fetch('/api/admin/gifts/create', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
-                    credentials: 'include', // Include cookies for auth
-                    body: `name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}&actualAmount=${encodeURIComponent(actualAmount)}`
+                    body: JSON.stringify({
+                        name,
+                        price: parseFloat(price),
+                        actualAmount: parseFloat(actualAmount)
+                    })
                 });
                 
                 const data = await response.json();
@@ -164,10 +161,8 @@
                     document.getElementById('errorMessage').classList.add('hidden');
                     document.getElementById('giftForm').reset();
                     
-                    // Reload gifts list
                     loadGifts();
                     
-                    // Hide success message after 3 seconds
                     setTimeout(() => {
                         document.getElementById('successMessage').classList.add('hidden');
                     }, 3000);
@@ -188,8 +183,11 @@
         
         async function loadGifts() {
             try {
+                const token = getAuthToken();
                 const response = await fetch('/api/admin/gifts/api', {
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
                 const data = await response.json();
                 
@@ -233,12 +231,12 @@
         }
         
         function logout() {
+            localStorage.removeItem('token');
             fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
                 .then(() => { window.location.href = '/'; })
                 .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
         }
         
-        // Load gifts on page load
         window.addEventListener('load', loadGifts);
     </script>
 </body>
