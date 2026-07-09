@@ -56,18 +56,18 @@ const io = new Server(server, {
 app.set('view engine', 'ejs');
 app.set('views', '.'); // Set to root where your .ejs files currently reside
 
+// DEBUG: Log ALL requests FIRST before any other middleware
+app.use((req, res, next) => {
+  console.log(`\n>>> REQUEST [${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log('>>> Authorization Header:', req.headers.authorization ? 'PRESENT' : 'MISSING');
+  console.log('>>> Content-Type:', req.headers['content-type']);
+  next();
+});
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Required to allow Tailwind CDN to load styles
 }));
-
-// DEBUG: Log all incoming requests
-app.use((req, res, next) => {
-  console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  next();
-});
 
 // CORS setup with comprehensive origins
 app.use(cors({
@@ -90,6 +90,14 @@ app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan('dev'));
+
+// DEBUG: Log body after parsing
+app.use((req, res, next) => {
+  if ((req.method === 'POST' || req.method === 'PUT') && req.path.includes('/admin/gifts')) {
+    console.log('>>> Body after parsing:', JSON.stringify(req.body));
+  }
+  next();
+});
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
