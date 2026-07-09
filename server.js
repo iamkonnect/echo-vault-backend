@@ -37,7 +37,10 @@ const io = new Server(server, {
       'http://localhost:*',
       'http://10.0.2.2:*',
       'https://echovault-frontend.eastus.azurecontainer.io',
-      'https://*.azurecontainer.io'
+      'https://*.azurecontainer.io',
+      'https://echovaultz.com',
+      'https://admin.echovaultz.com',
+      'https://www.echovaultz.com'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
@@ -78,7 +81,10 @@ app.use(cors({
     'http://10.0.2.2:*',
     'https://echovault-frontend.eastus.azurecontainer.io',
     'https://*.azurecontainer.io',
-    'https://echovault-backend.azurewebsites.net'
+    'https://echovault-backend.azurewebsites.net',
+    'https://echovaultz.com',
+    'https://admin.echovaultz.com',
+    'https://www.echovaultz.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
