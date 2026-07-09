@@ -212,7 +212,7 @@
                                     <td class="px-4 py-3">${iconHtml}</td>
                                     <td class="px-4 py-3 text-white font-medium">${gift.name}</td>
                                     <td class="px-4 py-3 text-white/70">$${parseFloat(gift.price).toFixed(2)}</td>
-                                    <td class="px-4 py-3 text-emerald-400 font-bold">$${parseFloat(gift.amount).toFixed(2)}</td>
+                                    <td class="px-4 py-3 text-emerald-400 font-bold">$${parseFloat(gift.actualAmount).toFixed(2)}</td>
                                     <td class="px-4 py-3 text-white/60 text-xs">${new Date(gift.createdAt).toLocaleDateString()}</td>
                                 </tr>`;
                         });
