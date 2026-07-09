@@ -62,31 +62,32 @@
         </header>
 
         <!-- Success Message -->
-        <% if (typeof success !== 'undefined') { %>
-            <div class="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-300">
-                <%= success %>
-            </div>
-        <% } %>
+        <div id="successMessage" class="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-300 hidden">
+            Gift created successfully!
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 hidden"></div>
 
         <!-- Add Gift Form -->
         <div class="glass p-8 border border-emerald-500/20 mb-8">
             <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-white">
                 <i class="fas fa-plus-circle text-emerald-400"></i> Create New Gift
             </h2>
-            <form action="/api/admin/gifts/create" method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <form id="giftForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Gift Name</label>
-                    <input type="text" name="name" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="e.g. Golden Mic" required>
+                    <input type="text" name="name" id="giftName" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="e.g. Golden Mic" required>
                     <small class="text-white/40 text-xs mt-1">Unique identifier</small>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Display Price ($)</label>
-                    <input type="number" step="0.01" name="price" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
+                    <input type="number" step="0.01" name="price" id="giftPrice" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
                     <small class="text-white/40 text-xs mt-1">What users see</small>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-white/70 mb-2">Actual Value ($)</label>
-                    <input type="number" step="0.01" name="actualAmount" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
+                    <input type="number" step="0.01" name="actualAmount" id="giftAmount" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:border-emerald-500 focus:bg-white/5 transition" placeholder="10.00" required>
                     <small class="text-white/40 text-xs mt-1">For revenue split</small>
                 </div>
                 <div class="flex flex-col justify-end">
@@ -125,56 +126,120 @@
         <!-- Existing Gifts -->
         <div class="glass p-8 border border-white/10">
             <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-white">
-                <i class="fas fa-list text-emerald-400"></i> Active Gifts (<%= gifts ? gifts.length : 0 %>)
+                <i class="fas fa-list text-emerald-400"></i> Active Gifts (<span id="giftCount">0</span>)
             </h2>
-            <% if (gifts && gifts.length > 0) { %>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-white/5 border-b border-white/10">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-semibold text-white">Icon</th>
-                                <th class="px-4 py-3 text-left font-semibold text-white">Gift Name</th>
-                                <th class="px-4 py-3 text-left font-semibold text-white">Display Price</th>
-                                <th class="px-4 py-3 text-left font-semibold text-white">Actual Value</th>
-                                <th class="px-4 py-3 text-left font-semibold text-white">Created</th>
-                                <th class="px-4 py-3 text-center font-semibold text-white">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% gifts.forEach(gift => { %>
-                                <tr class="border-t border-white/10 hover:bg-white/5 transition">
-                                    <td class="px-4 py-3"><span class="text-2xl"><%= gift.icon %></span></td>
-                                    <td class="px-4 py-3 text-white font-medium"><%= gift.name %></td>
-                                    <td class="px-4 py-3 text-white/70">$<%= parseFloat(gift.price).toFixed(2) %></td>
-                                    <td class="px-4 py-3 text-emerald-400 font-bold">$<%= parseFloat(gift.amount).toFixed(2) %></td>
-                                    <td class="px-4 py-3 text-white/60 text-xs"><%= new Date(gift.createdAt).toLocaleDateString() %></td>
-                                    <td class="px-4 py-3 text-center">
-                                        <form action="/api/admin/gifts/<%= gift.id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Remove this gift? This action cannot be undone.')">
-                                            <button type="submit" class="px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded text-xs font-bold transition">
-                                                <i class="fas fa-trash mr-1"></i> Remove
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-            <% } else { %>
-                <div class="text-center py-12">
-                    <i class="fas fa-inbox text-5xl text-white/20 mb-4 block"></i>
-                    <p class="text-white/50 text-lg">No gifts created yet. Create your first gift above!</p>
-                </div>
-            <% } %>
+            <div id="giftsTable" class="text-center py-12">
+                <i class="fas fa-inbox text-5xl text-white/20 mb-4 block"></i>
+                <p class="text-white/50 text-lg">No gifts created yet. Create your first gift above!</p>
+            </div>
         </div>
     </main>
 
     <script>
+        // Handle form submission with AJAX
+        document.getElementById('giftForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('giftName').value;
+            const price = document.getElementById('giftPrice').value;
+            const actualAmount = document.getElementById('giftAmount').value;
+            
+            console.log('Submitting gift:', { name, price, actualAmount });
+            
+            try {
+                const response = await fetch('/api/admin/gifts/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    credentials: 'include', // Include cookies for auth
+                    body: `name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}&actualAmount=${encodeURIComponent(actualAmount)}`
+                });
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                if (response.ok && data.success) {
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    document.getElementById('errorMessage').classList.add('hidden');
+                    document.getElementById('giftForm').reset();
+                    
+                    // Reload gifts list
+                    loadGifts();
+                    
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        document.getElementById('successMessage').classList.add('hidden');
+                    }, 3000);
+                } else {
+                    showError(data.message || 'Failed to create gift');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Network error: ' + error.message);
+            }
+        });
+        
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+        }
+        
+        async function loadGifts() {
+            try {
+                const response = await fetch('/api/admin/gifts/api', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const gifts = data.data;
+                    document.getElementById('giftCount').textContent = gifts.length;
+                    
+                    if (gifts.length > 0) {
+                        let html = `
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-white/5 border-b border-white/10">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left font-semibold text-white">Icon</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-white">Gift Name</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-white">Display Price</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-white">Actual Value</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-white">Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                        
+                        gifts.forEach(gift => {
+                            html += `
+                                <tr class="border-t border-white/10 hover:bg-white/5 transition">
+                                    <td class="px-4 py-3"><span class="text-2xl">${gift.icon}</span></td>
+                                    <td class="px-4 py-3 text-white font-medium">${gift.name}</td>
+                                    <td class="px-4 py-3 text-white/70">$${parseFloat(gift.price).toFixed(2)}</td>
+                                    <td class="px-4 py-3 text-emerald-400 font-bold">$${parseFloat(gift.amount).toFixed(2)}</td>
+                                    <td class="px-4 py-3 text-white/60 text-xs">${new Date(gift.createdAt).toLocaleDateString()}</td>
+                                </tr>`;
+                        });
+                        
+                        html += `</tbody></table></div>`;
+                        document.getElementById('giftsTable').innerHTML = html;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading gifts:', error);
+            }
+        }
+        
         function logout() {
-            fetch('/api/auth/logout', { method: 'POST' })
+            fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
                 .then(() => { window.location.href = '/'; })
                 .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
         }
+        
+        // Load gifts on page load
+        window.addEventListener('load', loadGifts);
     </script>
 </body>
 </html>
