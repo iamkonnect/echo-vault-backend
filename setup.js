@@ -44,7 +44,7 @@ console.log('✅ All required environment variables set\n');
 
         console.log('3️⃣  Checking for admin user...');
         const admin = await prisma.user.findUnique({
-            where: { email: 'akwera@gmail.com' }
+            where: { email: 'akwera@echovaultz.com' }
         });
 
         if (admin) {
@@ -54,13 +54,13 @@ console.log('✅ All required environment variables set\n');
         } else {
             console.log('⚠️  Admin user not found, creating...\n');
             
-            const hashedPassword = await bcrypt.hash('1234Abc!', 10);
+            const hashedPassword = await bcrypt.hash('Akwera@123', 10);
             const newAdmin = await prisma.user.create({
                 data: {
-                    email: 'akwera@gmail.com',
+                    email: 'akwera@echovaultz.com',
                     password: hashedPassword,
-                    name: 'Admin User',
-                    username: 'admin',
+                    name: 'Akwera',
+                    username: 'akwera',
                     role: 'ADMIN',
                     phone: null,
                     avatarUrl: null,
@@ -72,7 +72,7 @@ console.log('✅ All required environment variables set\n');
             console.log('✅ Admin user created successfully!');
             console.log(`   Email: ${newAdmin.email}`);
             console.log(`   Role: ${newAdmin.role}`);
-            console.log(`   Default Password: 1234Abc!\n`);
+            console.log(`   Default Password: Akwera@123\n`);
         }
 
         // Check for artist user
@@ -122,8 +122,8 @@ console.log('✅ All required environment variables set\n');
         console.log('\n✅ Setup complete!\n');
         console.log('📋 Next steps:');
         console.log('   1. Start the server: npm run dev');
-        console.log('   2. Open: http://localhost:5000');
-        console.log('   3. Admin login: akwera@gmail.com / 1234Abc!');
+        console.log('   2. Open: https://admin.echovaultz.com');
+        console.log('   3. Admin login: akwera@echovaultz.com / Akwera@123');
         console.log('   4. Artist login: artist@gmail.com / 1234Abc!\n');
 
         await prisma.$disconnect();
