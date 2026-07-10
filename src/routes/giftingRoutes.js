@@ -10,11 +10,12 @@ router.get('/', async (req, res) => {
       select: {
         id: true,
         name: true,
-        amount: true,
+        price: true,
+        actualAmount: true,
         icon: true,
         isActive: true,
       },
-      orderBy: { amount: 'asc' },
+      orderBy: { price: 'asc' },
     });
 
     res.json({
@@ -59,7 +60,6 @@ router.post('/send', async (req, res) => {
         receiverId,
         liveStreamId: streamId || null,
         amount,
-        quantity,
         createdAt: new Date(),
       },
     });
