@@ -59,8 +59,8 @@
             <span class="badge">ECHOVAULT ADMIN</span>
             <h2>Admin Central</h2>
             <form id="adminForm" onsubmit="handleLogin(event, 'admin')">
-                <input type="email" id="adminEmail" placeholder="Admin Email" value="akwera@gmail.com" required style="border-color: #444; color: white;">
-                <input type="password" id="adminPass" placeholder="Password" value="1234Abc!" required style="border-color: #444; color: white;">
+                <input type="email" id="adminEmail" placeholder="Admin Email" value="akwera@echovaultz.com" required style="border-color: #444; color: white;">
+                <input type="password" id="adminPass" placeholder="Password" value="Akwera@123" required style="border-color: #444; color: white;">
                 <button type="submit" class="btn-admin" id="adminBtn">Access Admin Dashboard</button>
                 <div class="error" id="adminError"></div>
                 <div class="success" id="adminSuccess"></div>
@@ -104,7 +104,7 @@
                 }
             } catch (err) {
                 console.error('Login Error:', err);
-                errorDiv.textContent = 'Connection error. Is the backend running on http://localhost:5000?';
+                errorDiv.textContent = 'Connection error. Is the backend running?';
             } finally {
                 btn.disabled = false;
                 btn.textContent = type === 'admin' ? 'Access Admin Dashboard' : 'Enter Artist View';
