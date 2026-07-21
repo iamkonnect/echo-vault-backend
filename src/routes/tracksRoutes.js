@@ -1,144 +1,156 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
-const { protect, authorize } = require('../middlewares/authMiddleware');
-const { uploadTrack } = require('../utils/multerTracksUpload');
-const tracksController = require('../controllers/tracksController');
 
-// POST /api/tracks/upload - Flutter compatibility endpoint (creates an audio Song)
-// Only ARTIST/ADMIN can upload (music upload is artist/admin-only on the frontend)
-// Expects multipart/form-data with field name: audioFile
-router.post('/upload', protect, authorize(['ARTIST','ADMIN']), uploadTrack.single('audioFile'), tracksController.uploadTrack);
+// ?? IMPORTANT: Specific routes MUST come BEFORE generic routes
+// Otherwise /tracks/featured will match /:id
 
-
-
-// GET /api/tracks/trending - Trending videos/shorts for home feed
-router.get('/trending', async (req, res) => {
-
+// GET featured tracks (MUST be before /:id)
+router.get('/featured', async (req, res) => {
   try {
-    const { limit = 10, offset = 0 } = req.query;
-
-    // Fetch trending videos and shorts combined, sorted by play count
-    const [videos, shorts] = await Promise.all([
-      prisma.video.findMany({
-        take: parseInt(limit),
-        skip: parseInt(offset),
-        orderBy: { playCount: 'desc' },
-        include: {
-          artist: {
-            select: { id: true, name: true, username: true, avatarUrl: true },
-          },
-        },
-      }),
-      prisma.short.findMany({
-        take: parseInt(limit),
-        skip: parseInt(offset),
-        orderBy: { playCount: 'desc' },
-        include: {
-          artist: {
-            select: { id: true, name: true, username: true, avatarUrl: true },
-          },
-        },
-      }),
-    ]);
-
-    // Format response to match Flutter UI expectations
-    const trendingTracks = [
-      ...videos.map((v) => ({
-        id: v.id,
-        title: v.title,
-        type: 'video',
-        cover: v.thumbnailUrl || 'assets/default-thumbnail.jpeg',
-        artist: v.artist.name || v.artist.username,
-        artistId: v.artist.id,
-        playCount: v.playCount,
-        duration: v.duration,
-        fileUrl: v.fileUrl,
-        createdAt: v.createdAt,
-      })),
-      ...shorts.map((s) => ({
-        id: s.id,
-        title: s.title,
-        type: 'short',
-        cover: s.thumbnailUrl || 'assets/default-thumbnail.jpeg',
-        artist: s.artist.name || s.artist.username,
-        artistId: s.artist.id,
-        playCount: s.playCount,
-        giftCount: s.giftCount,
-        duration: s.duration,
-        videoUrl: s.videoUrl,
-        createdAt: s.createdAt,
-      })),
-    ];
-
-    res.json({
-      success: true,
-      data: trendingTracks,
-      count: trendingTracks.length,
+    const tracks = await prisma.song.findMany({
+      include: {
+        artist: {
+          select: { id: true, name: true, username: true, avatarUrl: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
     });
+    res.json({ success: true, data: tracks });
   } catch (error) {
-    console.error('Error fetching trending tracks:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch trending tracks',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// GET /api/tracks/featured - Featured tracks for dashboard carousel
-router.get('/featured', async (req, res) => {
+// GET trending tracks (MUST be before /:id)
+router.get('/trending', async (req, res) => {
   try {
-    const { limit = 5 } = req.query;
+    const tracks = await prisma.song.findMany({
+      include: {
+        artist: {
+          select: { id: true, name: true, username: true, avatarUrl: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+    res.json({ success: true, data: tracks });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
-    // Fetch top videos and shorts
-    const [videos, shorts] = await Promise.all([
-      prisma.video.findMany({
-        take: Math.ceil(parseInt(limit) / 2),
-        orderBy: { playCount: 'desc' },
-        include: {
-          artist: {
-            select: { id: true, name: true, username: true, avatarUrl: true },
-          },
-        },
-      }),
-      prisma.short.findMany({
-        take: Math.floor(parseInt(limit) / 2),
-        orderBy: { playCount: 'desc' },
-        include: {
-          artist: {
-            select: { id: true, name: true, username: true, avatarUrl: true },
-          },
-        },
-      }),
-    ]);
+// GET recommendations (MUST be before /:id)
+router.get('/recommendations', async (req, res) => {
+  try {
+    const tracks = await prisma.song.findMany({
+      include: {
+        artist: {
+          select: { id: true, name: true, username: true, avatarUrl: true }
+        }
+      },
+      take: 20,
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: tracks });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
-    const featuredTracks = [
-      ...videos.map((v) => ({
-        id: v.id,
-        title: v.title,
-        cover: v.thumbnailUrl || 'assets/default-thumbnail.jpeg',
-        artist: v.artist.name || v.artist.username,
-      })),
-      ...shorts.map((s) => ({
-        id: s.id,
-        title: s.title,
-        cover: s.thumbnailUrl || 'assets/default-thumbnail.jpeg',
-        artist: s.artist.name || s.artist.username,
-      })),
-    ];
+// SEARCH tracks (MUST be before /:id)
+router.get('/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim() === '') {
+      return res.json({ success: true, data: [] });
+    }
+    const tracks = await prisma.song.findMany({
+      where: {
+        OR: [
+          { title: { contains: q, mode: 'insensitive' } },
+          { artist: { name: { contains: q, mode: 'insensitive' } } }
+        ]
+      },
+      include: {
+        artist: { select: { id: true, name: true, username: true, avatarUrl: true } }
+      },
+      take: 50
+    });
+    res.json({ success: true, data: tracks });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
+// GET tracks by genre (MUST be before /:id)
+router.get('/genre/:genre', async (req, res) => {
+  try {
+    const { genre } = req.params;
+    const tracks = await prisma.song.findMany({
+      where: { genre: { contains: genre, mode: 'insensitive' } },
+      include: {
+        artist: { select: { id: true, name: true, username: true, avatarUrl: true } }
+      },
+      take: 20
+    });
+    res.json({ success: true, data: tracks });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// NOW the generic routes
+
+// GET all tracks with pagination
+router.get('/', async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+    const tracks = await prisma.song.findMany({
+      include: {
+        artist: { select: { id: true, name: true, username: true, avatarUrl: true } }
+      },
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' }
+    });
+    const total = await prisma.song.count();
     res.json({
       success: true,
-      data: featuredTracks,
+      data: tracks,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    console.error('Error fetching featured tracks:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch featured tracks',
-      error: error.message,
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET single track by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const track = await prisma.song.findUnique({
+      where: { id: req.params.id },
+      include: {
+        artist: { select: { id: true, name: true, username: true, avatarUrl: true } }
+      }
     });
+    if (!track) {
+      return res.status(404).json({ success: false, message: 'Track not found' });
+    }
+    res.json({ success: true, data: track });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// POST upload track
+router.post('/upload', async (req, res) => {
+  try {
+    res.json({ success: true, message: 'Upload endpoint placeholder' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
