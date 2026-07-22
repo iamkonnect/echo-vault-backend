@@ -2,16 +2,21 @@ const prisma = require('../utils/prisma');
 const bcrypt = require('bcryptjs');
 const { generateToken, verifyToken } = require('../utils/jwt');
 
+// ============ REGISTER ============
+
 exports.registerDashboard = async (req, res, next) => {
   try {
     const { email, password, name, username, phone } = req.body;
-    
+
+    // Validate input
     if (!email || !password || !name || !username) {
-      return res.status(400).json({ 
-        error: 'Email, password, name, and username are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Email, password, name, and username are required'
       });
     }
 
+    // Check if user exists
     const existing = await prisma.user.findFirst({
       where: {
         OR: [
@@ -20,18 +25,20 @@ exports.registerDashboard = async (req, res, next) => {
         ]
       }
     });
-    
+
     if (existing) {
-      if (existing.email === email) {
-        return res.status(400).json({ error: 'Email already in use' });
-      } else {
-        return res.status(400).json({ error: 'Username already taken' });
-      }
+      const field = existing.email === email ? 'email' : 'username';
+      return res.status(409).json({
+        success: false,
+        message: `${field.charAt(0).toUpperCase() + field.slice(1)} already in use`
+      });
     }
-    
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
-    
+
+    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -43,177 +50,251 @@ exports.registerDashboard = async (req, res, next) => {
         role: 'ARTIST',
         lastLoginIp: userIp,
         lastLoginRegion: 'Unknown',
+        isVerified: false
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        username: true,
+        role: true,
+        createdAt: true
+      }
     });
 
-    res.status(201).json({ 
+    console.log(`✅ New artist registered: ${user.email}`);
+
+    res.status(201).json({
       success: true,
-      message: 'Account created successfully! Redirecting to login...' 
+      message: 'Account created successfully! Please log in.',
+      data: user
     });
   } catch (err) {
     console.error('Registration error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+      error: err.message
+    });
   }
 };
 
 exports.register = async (req, res, next) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name } = req.body;
+
     if (!email || !password || !name) {
-      return res.status(400).json({ message: 'Email, password, and name are required' });
+      return res.status(400).json({
+        success: false,
+        message: 'Email, password, and name are required'
+      });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(409).json({
+        success: false,
+        message: 'Email already registered'
+      });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
-    const userRole = role || 'ARTIST';
-    
+
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name,
-        role: userRole,
+        role: 'ARTIST',
         lastLoginIp: userIp,
         lastLoginRegion: 'Unknown',
+        isVerified: false
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true
+      }
     });
 
-    const { password: _, ...userWithoutPassword } = user;
     const token = generateToken(user.id, user.role);
 
+    console.log(`✅ Frontend user registered: ${user.email}`);
+
     res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
       token,
-      user: userWithoutPassword,
-      message: 'Account created successfully. Please log in.',
+      user
     });
   } catch (err) {
     console.error('Registration error:', err);
-    next(err);
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+      error: err.message
+    });
   }
 };
+
+// ============ LOGIN ============
 
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
     }
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
     }
 
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
     const userRegion = req.headers['x-region'] || 'Unknown';
 
+    // Update last login
     await prisma.user.update({
       where: { id: user.id },
       data: {
         lastLogin: new Date(),
         lastLoginIp: userIp,
         lastLoginRegion: userRegion,
-        isOnline: true,
+        isOnline: true
       }
     });
 
-    const { password: _, ...userWithoutPassword } = user;
     const token = generateToken(user.id, user.role);
 
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      isVerified: user.isVerified,
+      walletBalance: user.walletBalance
+    };
+
+    console.log(`✅ Frontend user login: ${user.email}`);
+
     res.json({
+      success: true,
+      message: 'Login successful',
       token,
-      user: userWithoutPassword,
+      user: userResponse
     });
   } catch (err) {
-    next(err);
+    console.error('Login error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: err.message
+    });
   }
 };
 
 exports.loginDashboard = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Email and password are required' 
+        message: 'Email and password are required'
       });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Invalid credentials' 
-      });
-    }
-    
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid credentials' 
+        message: 'Invalid email or password'
       });
     }
 
-    // Check role authorization - only ADMIN and ARTIST can access dashboard
-    const validRoles = ['ADMIN', 'ARTIST'];
-    if (!validRoles.includes(user.role)) {
-      return res.status(403).json({ 
+    // Check if user is admin or artist
+    if (!['ADMIN', 'ARTIST', 'MANAGER', 'ACCOUNTS'].includes(user.role)) {
+      return res.status(403).json({
         success: false,
-        message: 'Role does not have access to dashboard' 
+        message: 'Dashboard access denied'
+      });
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
       });
     }
 
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
-    const userRegion = req.headers['x-region'] || 'Unknown';
 
     await prisma.user.update({
       where: { id: user.id },
       data: {
         lastLogin: new Date(),
         lastLoginIp: userIp,
-        lastLoginRegion: userRegion,
-        isOnline: true,
+        isOnline: true
       }
     });
 
-    const { password: _, ...userWithoutPassword } = user;
     const token = generateToken(user.id, user.role);
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      isVerified: user.isVerified,
+      walletBalance: user.walletBalance,
+      phone: user.phone
+    };
 
-    // Return JSON with redirect URL instead of rendering HTML
-    const redirectTo = user.role === 'ADMIN' ? '/api/admin/dashboard' : '/api/artist/dashboard';
+    console.log(`✅ Dashboard login: ${user.email} (${user.role})`);
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
-      user: userWithoutPassword,
-      redirectTo
+      user: userResponse,
+      redirectTo: user.role === 'ADMIN' ? '/api/admin/dashboard' : '/api/artist/dashboard'
     });
-
   } catch (err) {
     console.error('Dashboard login error:', err);
-    next(err);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: err.message
+    });
   }
 };
 
-exports.logout = async (req, res) => {
+// ============ LOGOUT ============
+
+exports.logout = async (req, res, next) => {
   try {
     if (req.user) {
       await prisma.user.update({
@@ -221,63 +302,61 @@ exports.logout = async (req, res) => {
         data: { isOnline: false }
       });
     }
-    res.clearCookie('token');
-    res.json({ message: 'Logged out successfully' });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.json({ message: 'Logged out successfully' });
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed',
+      error: err.message
+    });
   }
 };
 
+// ============ TOKEN MANAGEMENT ============
+
 exports.refreshToken = async (req, res, next) => {
   try {
-    const { token } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+
     if (!token) {
-      return res.status(401).json({ 
-        message: 'No token provided',
-        code: 'NO_TOKEN' 
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
       });
     }
 
     const decoded = verifyToken(token);
-    const newToken = generateToken(decoded.userId, decoded.role);
-    
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        username: true,
-        role: true,
-        avatarUrl: true,
-        phone: true,
-        walletBalance: true,
-        isOnline: true,
-      },
+      select: { id: true, role: true }
     });
 
     if (!user) {
-      return res.status(401).json({ 
-        message: 'User not found',
-        code: 'USER_NOT_FOUND' 
+      return res.status(401).json({
+        success: false,
+        message: 'User not found'
       });
     }
 
+    const newToken = generateToken(user.id, user.role);
+
     res.json({
       success: true,
-      token: newToken,
-      user,
-      expiresIn: 24 * 60 * 60,
+      message: 'Token refreshed',
+      token: newToken
     });
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        message: 'Token expired',
-        code: 'TOKEN_EXPIRED',
-      });
-    }
-    next(error);
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    res.status(401).json({
+      success: false,
+      message: 'Token refresh failed',
+      error: err.message
+    });
   }
 };
 
@@ -289,27 +368,24 @@ exports.verifyAuth = async (req, res, next) => {
         id: true,
         email: true,
         name: true,
-        username: true,
         role: true,
         avatarUrl: true,
-        phone: true,
-        walletBalance: true,
-        isOnline: true,
-      },
+        isVerified: true,
+        walletBalance: true
+      }
     });
-
-    if (!user) {
-      return res.status(401).json({ 
-        message: 'User not found',
-        code: 'USER_NOT_FOUND' 
-      });
-    }
 
     res.json({
       success: true,
-      user,
+      message: 'User authenticated',
+      user
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    console.error('Auth verification error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Verification failed',
+      error: err.message
+    });
   }
 };

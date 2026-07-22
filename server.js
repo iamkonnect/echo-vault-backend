@@ -13,13 +13,20 @@ const prisma = require('./src/utils/prisma');
 const authRoutes = require('./src/routes/authRoutes');
 const artistRoutes = require('./src/routes/artistRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const giftManagementRoutes = require('./src/routes/giftManagementRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const tracksRoutes = require('./src/routes/tracksRoutes');
 const liveStreamsRoutes = require('./src/routes/liveStreamsRoutes');
 const giftingRoutes = require('./src/routes/giftingRoutes');
 const paymentRoutes = require('./src/routes/paymentRoutes');
 const messagesRoutes = require('./src/routes/messagesRoutes');
-
+const paymentsRoutes = require('./src/routes/paymentsRoutes');
+const artistsRoutes = require('./src/routes/artistsRoutes');
+const userRoutes = require('./src/routes/userRoutes');
+const adsRoutes = require('./src/routes/adsRoutes');
+const playlistsRoutes = require('./src/routes/playlistsRoutes');
+const albumsRoutes = require('./src/routes/albumsRoutes');
+const shortsRoutes = require('./src/routes/shortsRoutes');
 
 // Import middleware
 const { protect } = require('./src/middlewares/authMiddleware');
@@ -57,9 +64,9 @@ const io = new Server(server, {
 
 // View Engine Setup
 app.set('view engine', 'ejs');
-app.set('views', '.'); // Set to root where your .ejs files currently reside
+app.set('views', '.');
 
-// DEBUG: Log ALL requests FIRST before any other middleware
+// DEBUG: Log ALL requests
 app.use((req, res, next) => {
   console.log(`\n>>> REQUEST [${new Date().toISOString()}] ${req.method} ${req.path}`);
   console.log('>>> Authorization Header:', req.headers.authorization ? 'PRESENT' : 'MISSING');
@@ -69,181 +76,162 @@ app.use((req, res, next) => {
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Required to allow Tailwind CDN to load styles
+  contentSecurityPolicy: false,
 }));
 
-// CORS setup with comprehensive origins
+// CORS setup
 app.use(cors({
   origin: [
     process.env.CLIENT_URL || 'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:*',
-    'http://10.0.2.2:*',
-    'https://echovault-frontend.eastus.azurecontainer.io',
-    'https://*.azurecontainer.io',
-    'https://echovault-backend.azurewebsites.net',
     'https://echovaultz.com',
     'https://admin.echovaultz.com',
     'https://www.echovaultz.com'
   ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Parsing middleware
+// Body parsers
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Logging
 app.use(morgan('dev'));
 
-// DEBUG: Log body after parsing
-app.use((req, res, next) => {
-  if ((req.method === 'POST' || req.method === 'PUT') && req.path.includes('/admin/gifts')) {
-    console.log('>>> Body after parsing:', JSON.stringify(req.body));
-  }
-  next();
-});
-
-// Serve static files from public directory
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ============ HEALTH CHECK ENDPOINT ============
-
+// Health check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
+  res.json({
+    status: 'healthy',
+    timestamp: new Date(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// ============ API ROUTES ============
+// ============ ROUTES ============
 
+// Auth routes
 app.use('/api/auth', authRoutes);
+
+// Artist routes
 app.use('/api/artist', artistRoutes);
+
+// Admin routes
 app.use('/api/admin', adminRoutes);
+
+// Gift management (CRUD operations)
+app.use('/api/admin', giftManagementRoutes);
+
+// Analytics routes
 app.use('/api/analytics', analyticsRoutes);
+
+// Tracks routes
 app.use('/api/tracks', tracksRoutes);
+
+// Live streams routes
 app.use('/api/live', liveStreamsRoutes);
+
+// Shorts routes
+app.use('/api/shorts', shortsRoutes);
+
+// Gifting routes (public endpoints - send/list)
 app.use('/api/gifting', giftingRoutes);
+
+// Artists routes
+app.use('/api/artists', artistsRoutes);
+
+// User routes
+app.use('/api/user', userRoutes);
+
+// Payments routes (use paymentsRoutes, not paymentRoutes)
+app.use('/api/payments', paymentsRoutes);
+
+// Ads routes
+app.use('/api/ads', adsRoutes);
+
+// Playlists routes
+app.use('/api/playlists', playlistsRoutes);
+
+// Albums routes
+app.use('/api/albums', albumsRoutes);
+
+// Messages routes
 app.use('/api/messages', messagesRoutes);
-app.use('/api/payments', paymentRoutes);
 
-
-// ============ DASHBOARD ROUTES ============
-
+// Root endpoint
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.post('/api/auth/login-dashboard-artist', require('./src/controllers/authController').loginDashboard);
-app.post('/api/auth/login-dashboard-admin', require('./src/controllers/authController').loginDashboard);
-
-// ============ 404 & ERROR HANDLING ============
-
-// 404 handler - must come before error handler
-app.use((req, res) => {
-  res.status(404).json({ 
-    success: false,
-    message: `Route not found: ${req.method} ${req.path}`,
-    availableEndpoints: [
-      'GET /api/health',
-      'POST /api/auth/login',
-      'GET /api/live/streams',
-      'GET /api/live/streams/active',
-      'GET /api/gifting',
-      'POST /api/gifting/send',
-      'GET /api/payments/coin-packages'
-    ]
+  res.json({
+    message: 'EchoVault API Server',
+    version: '1.0.0',
+    status: 'running'
   });
 });
 
-// Global error handler - must be last middleware
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// Error handler middleware
 app.use(errorHandler);
 
 // ============ SOCKET.IO SETUP ============
 
-const setupSocketHandlers = require('./src/utils/socketHandlers');
-const socketState = setupSocketHandlers(io);
+io.on('connection', (socket) => {
+  console.log(`✅ Socket connected: ${socket.id}`);
 
-// Handle socket errors
-io.on('connect_error', (error) => {
-  console.error('Socket.IO connection error:', error);
+  socket.on('disconnect', () => {
+    console.log(`❌ Socket disconnected: ${socket.id}`);
+  });
+
+  socket.on('error', (error) => {
+    console.error(`Socket error for ${socket.id}:`, error);
+  });
 });
 
-// ============ SERVER INITIALIZATION ============
+// Make io accessible to route handlers
+app.set('io', io);
+
+// ============ SERVER START ============
 
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || '0.0.0.0';
 
-async function startServer() {
-  try {
-    // Verify database connection
-    await prisma.$connect();
-    console.log('✓ Database connected');
-
-    // Start server
-    server.listen(PORT, HOST, () => {
-      console.log(`
-╔════════════════════════════════════════╗
-║  🎵 EchoVault Server Started           ║
-╚════════════════════════════════════════╝
-Environment: ${process.env.NODE_ENV || 'development'}
-Host: http://${HOST}:${PORT}
-Health: http://${HOST}:${PORT}/api/health
-WebSocket: ws://${HOST}:${PORT}/socket.io
-Database: Connected
-Time: ${new Date().toISOString()}
-      `);
-    });
-  } catch (err) {
-    console.error('❌ Failed to start server:', err.message);
-    process.exit(1);
-  }
-}
-
-startServer();
-
-// ============ GRACEFUL SHUTDOWN ============
-
-const gracefulShutdown = async (signal) => {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
-  
-  try {
-    // Close server
-    server.close(async () => {
-      // Disconnect database
-      await prisma.$disconnect();
-      console.log('✓ Database disconnected');
-      console.log('✓ Server closed');
-      process.exit(0);
-    });
-
-    // Force shutdown after 10 seconds
-    setTimeout(() => {
-      console.error('⚠ Forced shutdown after 10 seconds');
-      process.exit(1);
-    }, 10000);
-  } catch (err) {
-    console.error('Error during shutdown:', err);
-    process.exit(1);
-  }
-};
-
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('💥 Uncaught Exception:', err);
-  gracefulShutdown('uncaughtException');
+server.listen(PORT, () => {
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`🚀 EchoVault Backend Server Running`);
+  console.log(`📍 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📅 Started: ${new Date().toISOString()}`);
+  console.log(`${'='.repeat(50)}\n`);
 });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
 });
 
-module.exports = { app, io, server };
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+});
+
+module.exports = { app, server, io };
