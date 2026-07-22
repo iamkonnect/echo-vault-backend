@@ -46,6 +46,20 @@ model User {
   isOnline        Boolean  @default(false)
   isVerified      Boolean  @default(false)
   verifiedAt      DateTime?
+
+  // OAuth fields
+  authProvider     String?  // 'google', 'apple', null for email/password
+  authProviderId   String?  // the OAuth provider's user ID
+
+  // Email verification
+  emailVerificationToken String?  @unique
+  emailVerified    Boolean   @default(false)
+  emailVerifiedAt  DateTime?
+
+  // Password reset
+  resetPasswordToken  String?  @unique
+  resetPasswordExpires DateTime?
+
   lastLogin       DateTime?
   lastLoginIp     String?
   lastLoginRegion String?

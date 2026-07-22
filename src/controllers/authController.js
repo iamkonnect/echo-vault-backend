@@ -1,6 +1,8 @@
 const prisma = require('../utils/prisma');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { generateToken, verifyToken } = require('../utils/jwt');
+const { sendVerificationEmail: sendVerifEmail, sendPasswordResetEmail } = require('../utils/email');
 
 // ============ REGISTER ============
 
@@ -8,7 +10,6 @@ exports.registerDashboard = async (req, res, next) => {
   try {
     const { email, password, name, username, phone } = req.body;
 
-    // Validate input
     if (!email || !password || !name || !username) {
       return res.status(400).json({
         success: false,
@@ -16,7 +17,6 @@ exports.registerDashboard = async (req, res, next) => {
       });
     }
 
-    // Check if user exists
     const existing = await prisma.user.findFirst({
       where: {
         OR: [
@@ -34,11 +34,9 @@ exports.registerDashboard = async (req, res, next) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -101,15 +99,22 @@ exports.register = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
 
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    // FRONTEND USERS get role 'USER' by default (not ARTIST)
+    // They can upgrade to ARTIST later via the artist mode toggle
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name,
-        role: 'ARTIST',
+        role: 'USER',
         lastLoginIp: userIp,
         lastLoginRegion: 'Unknown',
-        isVerified: false
+        isVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerified: false
       },
       select: {
         id: true,
@@ -121,12 +126,18 @@ exports.register = async (req, res, next) => {
 
     const token = generateToken(user.id, user.role);
 
-    console.log(`✅ Frontend user registered: ${user.email}`);
+    console.log(`✅ Frontend user registered: ${user.email} (role: USER)`);
+
+    // Send verification email (non-blocking - don't fail if email fails)
+    sendVerifEmail(email, verificationToken, name).catch(err => {
+      console.error('Failed to send verification email:', err.message);
+    });
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account created successfully! Please check your email to verify your account.',
       token,
+      requiresEmailVerification: true,
       user
     });
   } catch (err) {
@@ -171,7 +182,6 @@ exports.login = async (req, res, next) => {
     const userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
     const userRegion = req.headers['x-region'] || 'Unknown';
 
-    // Update last login
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -192,6 +202,7 @@ exports.login = async (req, res, next) => {
       role: user.role,
       avatarUrl: user.avatarUrl,
       isVerified: user.isVerified,
+      emailVerified: user.emailVerified,
       walletBalance: user.walletBalance
     };
 
@@ -232,7 +243,6 @@ exports.loginDashboard = async (req, res, next) => {
       });
     }
 
-    // Check if user is admin or artist
     if (!['ADMIN', 'ARTIST', 'MANAGER', 'ACCOUNTS'].includes(user.role)) {
       return res.status(403).json({
         success: false,
@@ -317,6 +327,286 @@ exports.logout = async (req, res, next) => {
   }
 };
 
+// ============ EMAIL VERIFICATION ============
+
+exports.sendVerificationEmail = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already verified'
+      });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationToken: verificationToken }
+    });
+
+    const result = await sendVerifEmail(user.email, verificationToken, user.name || 'User');
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Verification email sent'
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'Verification email queued. If email sending is not configured, contact support.',
+        emailConfigured: false
+      });
+    }
+  } catch (err) {
+    console.error('Send verification error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send verification email',
+      error: err.message
+    });
+  }
+};
+
+exports.verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const appUrl = process.env.CLIENT_URL || 'https://echovaultz.com';
+
+    if (!token) {
+      // If it's a GET request, render the view
+      if (req.method === 'GET') {
+        return res.render('verify-email', { 
+          success: false, 
+          message: 'No verification token provided',
+          appUrl 
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'No verification token provided'
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { emailVerificationToken: token }
+    });
+
+    if (!user) {
+      if (req.method === 'GET') {
+        return res.render('verify-email', { 
+          success: false, 
+          message: 'Invalid or expired verification token',
+          appUrl 
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification token'
+      });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        verifiedAt: new Date(),
+        isVerified: true
+      }
+    });
+
+    console.log(`✅ Email verified: ${user.email}`);
+
+    if (req.method === 'GET') {
+      return res.render('verify-email', { 
+        success: true, 
+        message: 'Email verified successfully',
+        appUrl 
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully'
+    });
+  } catch (err) {
+    console.error('Email verification error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Verification failed',
+      error: err.message
+    });
+  }
+};
+
+// ============ FORGOT / RESET PASSWORD ============
+
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const appUrl = process.env.CLIENT_URL || 'https://echovaultz.com';
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Generate reset token (valid for 1 hour)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetExpires
+      }
+    });
+
+    const result = await sendPasswordResetEmail(user.email, resetToken, user.name || 'User');
+
+    console.log(`✅ Password reset email sent: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process request',
+      error: err.message
+    });
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const appUrl = process.env.CLIENT_URL || 'https://echovaultz.com';
+
+    // GET request - render the reset form
+    if (req.method === 'GET') {
+      if (!token) {
+        return res.redirect(`${appUrl}/login`);
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { resetPasswordToken: token }
+      });
+
+      if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+        return res.render('reset-password', { 
+          success: false, 
+          expired: true, 
+          error: null,
+          token,
+          appUrl 
+        });
+      }
+
+      return res.render('reset-password', { 
+        success: false, 
+        expired: false,
+        error: null,
+        token,
+        appUrl 
+      });
+    }
+
+    // POST request - update password
+    const { password, confirmPassword } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.render('reset-password', { 
+        success: false, 
+        expired: false,
+        error: 'Password must be at least 6 characters',
+        token,
+        appUrl 
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.render('reset-password', { 
+        success: false, 
+        expired: false,
+        error: 'Passwords do not match',
+        token,
+        appUrl 
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { resetPasswordToken: token }
+    });
+
+    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      return res.render('reset-password', { 
+        success: false, 
+        expired: true,
+        error: null,
+        token,
+        appUrl 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+      }
+    });
+
+    console.log(`✅ Password reset completed: ${user.email}`);
+
+    res.render('reset-password', { 
+      success: true, 
+      expired: false,
+      error: null,
+      token,
+      appUrl 
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+      error: err.message
+    });
+  }
+};
+
 // ============ TOKEN MANAGEMENT ============
 
 exports.refreshToken = async (req, res, next) => {
@@ -371,6 +661,7 @@ exports.verifyAuth = async (req, res, next) => {
         role: true,
         avatarUrl: true,
         isVerified: true,
+        emailVerified: true,
         walletBalance: true
       }
     });
@@ -385,6 +676,66 @@ exports.verifyAuth = async (req, res, next) => {
     res.status(500).json({
       success: false,
       message: 'Verification failed',
+      error: err.message
+    });
+  }
+};
+
+// ============ UPGRADE TO ARTIST ============
+
+exports.upgradeToArtist = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Check if user already has backend access roles
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, name: true, email: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // If already ARTIST or ADMIN, just confirm
+    if (user.role === 'ARTIST' || user.role === 'ADMIN') {
+      return res.json({
+        success: true,
+        message: 'You are already an artist',
+        user: { ...user, role: 'ARTIST' }
+      });
+    }
+
+    // Upgrade from USER to ARTIST
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role: 'ARTIST' },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatarUrl: true,
+        isVerified: true,
+        walletBalance: true
+      }
+    });
+
+    console.log(`✅ User upgraded to artist: ${updatedUser.email}`);
+
+    res.json({
+      success: true,
+      message: 'Congratulations! You are now an artist. You can now access the artist dashboard, upload music, and go live.',
+      user: updatedUser
+    });
+  } catch (err) {
+    console.error('Upgrade to artist error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upgrade to artist',
       error: err.message
     });
   }
