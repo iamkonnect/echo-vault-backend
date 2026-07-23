@@ -10,7 +10,6 @@ router.get('/', async (req, res) => {
     const skip = (page - 1) * limit;
     
     const shorts = await prisma.short.findMany({
-      where: { status: 'PUBLISHED' },
       include: {
         artist: {
           select: { 
@@ -20,9 +19,6 @@ router.get('/', async (req, res) => {
             avatarUrl: true,
             isVerified: true
           }
-        },
-        _count: {
-          select: { likes: true, comments: true }
         }
       },
       skip: parseInt(skip),
@@ -30,9 +26,7 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     
-    const total = await prisma.short.count({
-      where: { status: 'PUBLISHED' }
-    });
+    const total = await prisma.short.count();
     
     res.json({
       success: true,
@@ -67,9 +61,6 @@ router.get('/:id', async (req, res) => {
             avatarUrl: true,
             isVerified: true
           }
-        },
-        _count: {
-          select: { likes: true, comments: true }
         }
       }
     });
@@ -97,7 +88,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/shorts - Create a short (requires auth)
 router.post('/', protect, async (req, res) => {
   try {
-    const { title, videoUrl, description, thumbnailUrl, genre } = req.body;
+    const { title, videoUrl, thumbnailUrl, duration } = req.body;
     const userId = req.user.id;
     
     if (!title || !videoUrl) {
@@ -111,12 +102,9 @@ router.post('/', protect, async (req, res) => {
       data: {
         title,
         videoUrl,
-        description: description || '',
-        thumbnailUrl: thumbnailUrl || '',
-        genre: genre || 'General',
+        thumbnailUrl: thumbnailUrl || null,
         artistId: userId,
-        status: 'PUBLISHED',
-        duration: 0
+        duration: Number.isFinite(Number(duration)) ? Number(duration) : 0
       }
     });
     
