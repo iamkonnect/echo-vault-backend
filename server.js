@@ -98,13 +98,18 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// ✅ Trust Traefik proxy for session cookies
+app.set('trust proxy', 1);
+
 // Session middleware (required for Passport)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'echovault-session-secret-key-2026',
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
