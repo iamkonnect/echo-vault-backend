@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, registerDashboard, login, loginDashboard, logout, refreshToken, verifyAuth, sendVerificationEmail, verifyEmail, forgotPassword, resetPassword, upgradeToArtist } = require('../controllers/authController');
+const { register, registerDashboard, login, loginDashboard, logout, refreshToken, verifyAuth, sendVerificationEmail, verifyEmail, forgotPassword, resetPassword, upgradeToArtist, deactivateAccount } = require('../controllers/authController');
 const { protect } = require('../middlewares/authMiddleware');
 const passport = require('../utils/oauth');
 const router = express.Router();
@@ -49,6 +49,10 @@ router.post('/reset-password/:token', resetPassword);
 router.post('/refresh', refreshToken);
 router.post('/verify', protect, verifyAuth);
 router.post('/upgrade-artist', protect, upgradeToArtist);
+
+// ============ ACCOUNT DEACTIVATION ============
+
+router.post('/deactivate-account', protect, deactivateAccount);
 
 // ============ OAUTH - GOOGLE ============
 

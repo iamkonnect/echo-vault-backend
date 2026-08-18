@@ -740,3 +740,37 @@ exports.upgradeToArtist = async (req, res, next) => {
     });
   }
 };
+
+// ============ ACCOUNT DEACTIVATION ============
+
+// ✅ FIX: Deactivate account
+exports.deactivateAccount = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Update user to inactive
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        deactivatedAt: new Date(),
+        email: null,  // Clear email so someone else can reuse it
+        password: null  // Clear password for security
+      }
+    });
+
+    console.log(`✅ Account deactivated: ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'Account deactivated successfully. Your data has been preserved.'
+    });
+  } catch (err) {
+    console.error('Account deactivation error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to deactivate account',
+      error: err.message
+    });
+  }
+};
