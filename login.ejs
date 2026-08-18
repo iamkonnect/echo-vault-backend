@@ -159,15 +159,15 @@
                     // Store token in localStorage and sessionStorage
                     console.log('Login response:', data);
                     console.log('Storing token:', data.token.substring(0, 20) + '...');
-                    localStorage.setItem('token', data.token);
-                    sessionStorage.setItem('token', data.token);
-                    console.log('Token saved in localStorage:', localStorage.getItem('token') ? 'YES' : 'NO');
-                    console.log('Token saved in sessionStorage:', sessionStorage.getItem('token') ? 'YES' : 'NO');
+                    localStorage.setItem('adminToken', data.token);
+                    sessionStorage.setItem('adminToken', data.token);
+                    console.log('Token saved in localStorage:', localStorage.getItem('adminToken') ? 'YES' : 'NO');
+                    console.log('Token saved in sessionStorage:', sessionStorage.getItem('adminToken') ? 'YES' : 'NO');
                     
                     // Small delay to ensure storage completes
                     setTimeout(() => {
-                        console.log('Redirecting to:', data.redirectTo || '/dashboard');
-                        window.location.href = data.redirectTo || '/dashboard';
+                        console.log('Redirecting to:', data.redirectTo || '/admin-dashboard.html');
+                        window.location.href = data.redirectTo || '/admin-dashboard.html';
                     }, 500);
                 } else {
                     errorDiv.textContent = data.message || 'Login failed';
