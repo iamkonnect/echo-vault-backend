@@ -525,6 +525,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
     <script>
+        // Token and Auth Helpers
+        function getAuthToken() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            return token;
+        }
+        
+        async function fetchWithAuth(url, options = {}) {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ` + token;
+            } else {
+                window.location.href = '/';
+                return null;
+            }
+            
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+            
+            if (response.status === 401) {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+                return null;
+            }
+            
+            return response;
+        }
+        
         let currentDateRange = { startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)), endDate: new Date() };
 
         function toggleDateDropdown() {
@@ -646,8 +681,8 @@
         });
 
         function logout() {
-            fetch('/api/auth/logout', { method: 'POST' })
-                .then(() => { window.location.href = '/'; })
+            fetchWithAuth('/api/auth/logout', { method: 'POST' })
+                .then(() => { localStorage.clear(); sessionStorage.clear(); window.location.href = '/'; })
                 .catch(err => { console.error('Logout error:', err); window.location.href = '/'; });
         }
 

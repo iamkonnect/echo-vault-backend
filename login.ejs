@@ -124,8 +124,8 @@
                     
                     // Small delay to ensure storage completes
                     setTimeout(() => {
-                        console.log('Redirecting to:', data.redirectTo || '/api/artist/dashboard');
-                        window.location.href = data.redirectTo || '/api/artist/dashboard';
+                        console.log('Redirecting to:', data.redirectTo || '/artist/dashboard');
+                        window.location.href = data.redirectTo || '/artist/dashboard';
                     }, 500);
                 } else {
                     errorDiv.textContent = data.message || 'Login failed';
@@ -166,8 +166,8 @@
                     
                     // Small delay to ensure storage completes
                     setTimeout(() => {
-                        console.log('Redirecting to:', data.redirectTo || '/api/admin/dashboard');
-                        window.location.href = data.redirectTo || '/api/admin/dashboard';
+                        console.log('Redirecting to:', data.redirectTo || '/dashboard');
+                        window.location.href = data.redirectTo || '/dashboard';
                     }, 500);
                 } else {
                     errorDiv.textContent = data.message || 'Login failed';
