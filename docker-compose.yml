@@ -16,12 +16,7 @@ services:
       - "5000"
     labels:
       - traefik.enable=true
-      # ✅ Route for admin interface (admin.echovaultz.com)
-      - traefik.http.routers.echo-vault-admin.rule=Host(`admin.echovaultz.com`)
-      - traefik.http.routers.echo-vault-admin.entrypoints=websecure
-      - traefik.http.routers.echo-vault-admin.tls=true
-      - traefik.http.services.echo-vault-admin.loadbalancer.server.port=5000
-      # ✅ Route for API calls (api.echovaultz.com) - NEW
+      # ✅ Route for API calls only (api.echovaultz.com)
       - traefik.http.routers.echo-vault-api.rule=Host(`api.echovaultz.com`)
       - traefik.http.routers.echo-vault-api.entrypoints=websecure
       - traefik.http.routers.echo-vault-api.tls=true
