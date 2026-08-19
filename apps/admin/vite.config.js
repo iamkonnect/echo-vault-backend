@@ -10,9 +10,11 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-  },
-  define: {
-    // Make environment variables available in the app
-    __VITE_API_URL__: JSON.stringify(process.env.VITE_API_URL || 'https://api.echovaultz.com'),
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
 });

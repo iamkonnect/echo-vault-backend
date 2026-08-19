@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-// Get API URL from environment, fallback to current origin
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.echovaultz.com';
+// Use /api endpoints on same domain (Express backend serves /admin with /api routes)
+const API_BASE = '/api';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -21,7 +21,7 @@ function App() {
     const token = localStorage.getItem('adminToken');
     if (token) {
       try {
-        const response = await axios.get(`${API_URL}/api/admin/dashboard`, {
+        const response = await axios.get(`${API_BASE}/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDashboard(response.data);
@@ -43,7 +43,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/login-dashboard`,
+        `${API_BASE}/auth/login-dashboard`,
         { email, password },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -102,8 +102,6 @@ function App() {
               {loading ? 'Logging in...' : 'Admin Control'}
             </button>
           </form>
-
-          <p style={styles.apiInfo}>API: {API_URL}</p>
         </div>
       </div>
     );
@@ -178,13 +176,6 @@ const styles = {
     fontSize: '16px',
     color: 'rgba(255, 255, 255, 0.6)',
     marginBottom: '32px',
-  },
-  apiInfo: {
-    fontSize: '12px',
-    color: 'rgba(255, 255, 255, 0.4)',
-    marginTop: '16px',
-    textAlign: 'center',
-    wordBreak: 'break-all',
   },
   form: {
     display: 'flex',
