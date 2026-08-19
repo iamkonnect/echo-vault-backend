@@ -8,8 +8,16 @@ import VideoManagement from './pages/VideoManagement';
 import ShortsManagement from './pages/ShortsManagement';
 import AdsManagement from './pages/AdsManagement';
 import SliderManagement from './pages/SliderManagement';
-import ArtistPortal from './pages/ArtistPortal';
 import Payouts from './pages/Payouts';
+// Artist pages
+import ArtistDashboard from './pages/artist/ArtistDashboard';
+import UploadSong from './pages/artist/UploadSong';
+import MyMusic from './pages/artist/MyMusic';
+import UploadVideo from './pages/artist/UploadVideo';
+import UploadShorts from './pages/artist/UploadShorts';
+import ArtistRevenue from './pages/artist/ArtistRevenue';
+import ArtistInsights from './pages/artist/ArtistInsights';
+import ArtistLiveInsights from './pages/artist/ArtistLiveInsights';
 
 const API_BASE = 'https://api.echovaultz.com/api';
 
@@ -224,19 +232,38 @@ function App() {
       ]},
     ];
 
+    const artistNavigation = [
+      { label: 'OVERVIEW', section: 'artistDashboard', icon: '📊' },
+      { label: 'MUSIC', items: [
+        { label: 'Upload Song', page: 'uploadSong', icon: '⬆️' },
+        { label: 'My Music', page: 'myMusic', icon: '🎵' },
+      ]},
+      { label: 'CONTENT', items: [
+        { label: 'Upload Video', page: 'uploadVideo', icon: '🎬' },
+        { label: 'Upload Shorts', page: 'uploadShorts', icon: '📹' },
+      ]},
+      { label: 'ANALYTICS', items: [
+        { label: 'Revenue', page: 'artistRevenue', icon: '💰' },
+        { label: 'Insights', page: 'artistInsights', icon: '📈' },
+        { label: 'Live Insights', page: 'artistLiveInsights', icon: '📊' },
+      ]},
+    ];
+
+    const navigation = isAdmin ? adminNavigation : artistNavigation;
+
     return (
       <div style={styles.dashboardContainer}>
         {/* Sidebar */}
         <div style={{...styles.sidebar, width: sidebarOpen ? '250px' : '0'}}>
           <div style={styles.sidebarHeader}>
-            <div style={styles.logo}>🔐</div>
+            <div style={styles.logo}>{isAdmin ? '🔐' : '🎵'}</div>
             <div style={styles.logoText}>
-              <div style={styles.logoTitle}>ADMIN</div>
-              <div style={styles.logoSubtitle}>CENTRAL</div>
+              <div style={styles.logoTitle}>{isAdmin ? 'ADMIN' : 'ARTIST'}</div>
+              <div style={styles.logoSubtitle}>{isAdmin ? 'CENTRAL' : 'PORTAL'}</div>
             </div>
           </div>
 
-          {adminNavigation.map((section, idx) => (
+          {navigation.map((section, idx) => (
             <div key={idx}>
               {section.items ? (
                 <>
@@ -276,7 +303,7 @@ function App() {
               ☰
             </button>
             <div style={styles.topBarRight}>
-              <span style={styles.userInfo}>Platform Revenue: $0</span>
+              <span style={styles.userInfo}>{isAdmin ? 'Platform Revenue: $0' : 'Your Revenue: $0'}</span>
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout
               </button>
@@ -285,15 +312,30 @@ function App() {
 
           {/* Page Content */}
           <div style={styles.pageContent}>
-            {currentPage === 'dashboard' && <Dashboard user={user} />}
-            {currentPage === 'userDirectory' && <UserDirectory />}
-            {currentPage === 'artistVerification' && <ArtistVerification />}
-            {currentPage === 'musicManagement' && <MusicManagement />}
-            {currentPage === 'videoManagement' && <VideoManagement />}
-            {currentPage === 'shortsManagement' && <ShortsManagement />}
-            {currentPage === 'adsManagement' && <AdsManagement />}
-            {currentPage === 'sliderManagement' && <SliderManagement />}
-            {currentPage === 'payouts' && <Payouts />}
+            {isAdmin ? (
+              <>
+                {currentPage === 'dashboard' && <Dashboard user={user} />}
+                {currentPage === 'userDirectory' && <UserDirectory />}
+                {currentPage === 'artistVerification' && <ArtistVerification />}
+                {currentPage === 'musicManagement' && <MusicManagement />}
+                {currentPage === 'videoManagement' && <VideoManagement />}
+                {currentPage === 'shortsManagement' && <ShortsManagement />}
+                {currentPage === 'adsManagement' && <AdsManagement />}
+                {currentPage === 'sliderManagement' && <SliderManagement />}
+                {currentPage === 'payouts' && <Payouts />}
+              </>
+            ) : (
+              <>
+                {currentPage === 'artistDashboard' && <ArtistDashboard user={user} />}
+                {currentPage === 'uploadSong' && <UploadSong />}
+                {currentPage === 'myMusic' && <MyMusic />}
+                {currentPage === 'uploadVideo' && <UploadVideo />}
+                {currentPage === 'uploadShorts' && <UploadShorts />}
+                {currentPage === 'artistRevenue' && <ArtistRevenue />}
+                {currentPage === 'artistInsights' && <ArtistInsights />}
+                {currentPage === 'artistLiveInsights' && <ArtistLiveInsights />}
+              </>
+            )}
           </div>
         </div>
       </div>
