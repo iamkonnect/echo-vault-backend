@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  admin:
+    build: .
+    image: iamkonnect/echovault-admin:latest
+    environment:
+      VITE_API_URL: https://api.echovaultz.com
+    expose:
+      - "3000"
+    labels:
+      - traefik.enable=true
+      # ✅ Route for React admin UI (admin.echovaultz.com)
+      - traefik.http.routers.echo-vault-admin.rule=Host(`admin.echovaultz.com`)
+      - traefik.http.routers.echo-vault-admin.entrypoints=websecure
+      - traefik.http.routers.echo-vault-admin.tls=true
+      - traefik.http.services.echo-vault-admin.loadbalancer.server.port=3000
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - echo-vault-network
+
+networks:
+  echo-vault-network:
+    external: true

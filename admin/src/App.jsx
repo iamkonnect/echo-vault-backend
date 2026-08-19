@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const API_BASE = window.location.origin;
+// Get API URL from environment, fallback to current origin
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.echovaultz.com';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentPage, setCurrentPage] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,14 +21,17 @@ function App() {
     const token = localStorage.getItem('adminToken');
     if (token) {
       try {
-        const response = await axios.get(`${API_BASE}/api/admin/dashboard`, {
+        const response = await axios.get(`${API_URL}/api/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDashboard(response.data);
         setIsLoggedIn(true);
+        setCurrentPage('dashboard');
       } catch (err) {
+        console.error('Auth check failed:', err);
         localStorage.removeItem('adminToken');
         setIsLoggedIn(false);
+        setCurrentPage('login');
       }
     }
   };
@@ -38,7 +43,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        `${API_BASE}/api/auth/login-dashboard`,
+        `${API_URL}/api/auth/login-dashboard`,
         { email, password },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -48,6 +53,7 @@ function App() {
         setEmail('');
         setPassword('');
         setIsLoggedIn(true);
+        setCurrentPage('dashboard');
         checkAuth();
       }
     } catch (err) {
@@ -60,10 +66,11 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     setIsLoggedIn(false);
+    setCurrentPage('login');
     setDashboard(null);
   };
 
-  if (!isLoggedIn) {
+  if (currentPage === 'login') {
     return (
       <div style={styles.loginContainer}>
         <div style={styles.loginBox}>
@@ -95,46 +102,54 @@ function App() {
               {loading ? 'Logging in...' : 'Admin Control'}
             </button>
           </form>
+
+          <p style={styles.apiInfo}>API: {API_URL}</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div style={styles.dashboardContainer}>
-      <nav style={styles.navbar}>
-        <h1 style={styles.navTitle}>EchoVault Admin Central</h1>
-        <button onClick={handleLogout} style={styles.logoutBtn}>
-          Logout
-        </button>
-      </nav>
+  if (currentPage === 'dashboard') {
+    return (
+      <div style={styles.dashboardContainer}>
+        <nav style={styles.navbar}>
+          <h1 style={styles.navTitle}>EchoVault Admin Central</h1>
+          <button onClick={handleLogout} style={styles.logoutBtn}>
+            Logout
+          </button>
+        </nav>
 
-      <main style={styles.main}>
-        <h2 style={styles.heading}>Platform Overview</h2>
-        
-        {dashboard && (
-          <div style={styles.metricsGrid}>
-            <div style={styles.metricCard}>
-              <p style={styles.metricLabel}>Total Users</p>
-              <p style={styles.metricValue}>{dashboard.userCount || 0}</p>
-            </div>
-            <div style={styles.metricCard}>
-              <p style={styles.metricLabel}>Active Artists</p>
-              <p style={styles.metricValue}>{dashboard.artistCount || 0}</p>
+        <main style={styles.main}>
+          <h2 style={styles.heading}>Platform Overview</h2>
+          
+          {dashboard && (
+            <div style={styles.metricsGrid}>
+              <div style={styles.metricCard}>
+                <p style={styles.metricLabel}>Total Users</p>
+                <p style={styles.metricValue}>{dashboard.userCount || 0}</p>
               </div>
-            <div style={styles.metricCard}>
-              <p style={styles.metricLabel}>Platform Revenue</p>
-              <p style={styles.metricValue}>${(dashboard.revenue || 0).toFixed(2)}</p>
+              <div style={styles.metricCard}>
+                <p style={styles.metricLabel}>Active Artists</p>
+                <p style={styles.metricValue}>{dashboard.artistCount || 0}</p>
+              </div>
+              <div style={styles.metricCard}>
+                <p style={styles.metricLabel}>Platform Revenue</p>
+                <p style={styles.metricValue}>${(dashboard.revenue || 0).toFixed(2)}</p>
+              </div>
+              <div style={styles.metricCard}>
+                <p style={styles.metricLabel}>Pending Payouts</p>
+                <p style={styles.metricValue}>{dashboard.withdrawals?.length || 0}</p>
+              </div>
             </div>
-            <div style={styles.metricCard}>
-              <p style={styles.metricLabel}>Pending Payouts</p>
-              <p style={styles.metricValue}>{dashboard.withdrawals?.length || 0}</p>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+          )}
+
+          {!dashboard && (
+            <div style={styles.loading}>Loading dashboard...</div>
+          )}
+        </main>
+      </div>
+    );
+  }
 }
 
 const styles = {
@@ -163,6 +178,13 @@ const styles = {
     fontSize: '16px',
     color: 'rgba(255, 255, 255, 0.6)',
     marginBottom: '32px',
+  },
+  apiInfo: {
+    fontSize: '12px',
+    color: 'rgba(255, 255, 255, 0.4)',
+    marginTop: '16px',
+    textAlign: 'center',
+    wordBreak: 'break-all',
   },
   form: {
     display: 'flex',
@@ -258,6 +280,11 @@ const styles = {
     fontSize: '36px',
     fontWeight: '700',
     color: '#10b981',
+  },
+  loading: {
+    textAlign: 'center',
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: '16px',
   },
 };
 
