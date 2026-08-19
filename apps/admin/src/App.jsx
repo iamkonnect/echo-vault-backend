@@ -3,6 +3,23 @@ import axios from 'axios';
 
 const API_BASE = 'https://api.echovaultz.com/api';
 
+// Create axios instance with default headers
+const api = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('adminToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 function App() {
   const [userType, setUserType] = useState(null);  // 'admin' or 'artist' or null
   const [currentPage, setCurrentPage] = useState('login');
@@ -24,12 +41,10 @@ function App() {
     if (token && userTypeStored) {
       try {
         const endpoint = userTypeStored === 'admin' 
-          ? `${API_BASE}/admin/dashboard`
-          : `${API_BASE}/artist/dashboard`;
+          ? '/admin/dashboard'
+          : '/artist/dashboard';
         
-        const response = await axios.get(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get(endpoint);
         
         setDashboard(response.data);
         setUserType(userTypeStored);
@@ -51,27 +66,38 @@ function App() {
 
     try {
       const endpoint = type === 'admin'
-        ? `${API_BASE}/auth/login-dashboard`
-        : `${API_BASE}/auth/login-artist`;
+        ? '/auth/login-dashboard'
+        : '/auth/login-artist';
 
-      const response = await axios.post(endpoint, {
+      // Login request (no token needed yet)
+      const loginResponse = await api.post(endpoint, {
         email,
         password,
-      }, {
-        headers: { 'Content-Type': 'application/json' },
       });
 
-      if (response.data.token) {
-        localStorage.setItem('adminToken', response.data.token);
+      if (loginResponse.data.token) {
+        // Save token to localStorage
+        localStorage.setItem('adminToken', loginResponse.data.token);
         localStorage.setItem('userType', type);
+
+        // Now make the dashboard request with the token
+        const dashboardEndpoint = type === 'admin'
+          ? '/admin/dashboard'
+          : '/artist/dashboard';
+
+        const dashboardResponse = await api.get(dashboardEndpoint);
+
+        setDashboard(dashboardResponse.data);
         setEmail('');
         setPassword('');
         setUserType(type);
         setCurrentPage('dashboard');
-        checkAuth();
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('userType');
     } finally {
       setLoading(false);
     }
@@ -84,6 +110,8 @@ function App() {
     setCurrentPage('login');
     setDashboard(null);
     setUser(null);
+    setEmail('');
+    setPassword('');
   };
 
   // Login Page
