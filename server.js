@@ -129,6 +129,18 @@ app.use(morgan('dev'));
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ✅ Serve React admin app for admin.echovaultz.com requests
+// When client requests routes like /dashboard, serve index.html and let React handle routing
+app.get(['/admin*', '/dashboard*', '/users*', '/artists*', '/payments*', '/settings*'], (req, res) => {
+  const adminIndexPath = path.join(__dirname, 'public/admin/index.html');
+  res.sendFile(adminIndexPath, (err) => {
+    if (err) {
+      console.log('Admin index not found, continuing...', err.message);
+      res.status(404).json({ error: 'Admin page not found' });
+    }
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
