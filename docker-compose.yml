@@ -21,11 +21,6 @@ services:
       - traefik.http.routers.echo-vault-api.entrypoints=websecure
       - traefik.http.routers.echo-vault-api.tls=true
       - traefik.http.services.echo-vault-api.loadbalancer.server.port=5000
-      # ✅ Route for Admin UI (admin.echovaultz.com -> /admin route in Express)
-      - traefik.http.routers.echo-vault-admin.rule=Host(`admin.echovaultz.com`)
-      - traefik.http.routers.echo-vault-admin.entrypoints=websecure
-      - traefik.http.routers.echo-vault-admin.tls=true
-      - traefik.http.services.echo-vault-admin.loadbalancer.server.port=5000
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5000/api/health', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 10s

@@ -129,12 +129,6 @@ app.use(morgan('dev'));
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Serve React admin app at /admin with client-side routing
-app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
-app.get('/admin*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/admin/index.html'));
-});
-
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
