@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-// Use /api endpoints on same domain (Express backend serves /admin with /api routes)
-const API_BASE = '/api';
+// API runs on separate domain (api.echovaultz.com)
+const API_BASE = 'https://api.echovaultz.com/api';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
