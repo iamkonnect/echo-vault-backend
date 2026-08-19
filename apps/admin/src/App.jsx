@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import Dashboard from './pages/Dashboard';
+import UserDirectory from './pages/UserDirectory';
+import ArtistVerification from './pages/ArtistVerification';
+import MusicManagement from './pages/MusicManagement';
+import VideoManagement from './pages/VideoManagement';
+import ShortsManagement from './pages/ShortsManagement';
+import AdsManagement from './pages/AdsManagement';
+import SliderManagement from './pages/SliderManagement';
+import ArtistPortal from './pages/ArtistPortal';
+import Payouts from './pages/Payouts';
 
 const API_BASE = 'https://api.echovaultz.com/api';
 
-// Create axios instance with default headers
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
@@ -11,7 +20,6 @@ const api = axios.create({
   },
 });
 
-// Add token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('adminToken');
   if (token) {
@@ -21,14 +29,15 @@ api.interceptors.request.use((config) => {
 });
 
 function App() {
-  const [userType, setUserType] = useState(null);  // 'admin' or 'artist' or null
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState(null);
   const [currentPage, setCurrentPage] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [dashboard, setDashboard] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     checkAuth();
@@ -45,15 +54,16 @@ function App() {
           : '/artist/dashboard';
         
         const response = await api.get(endpoint);
-        
-        setDashboard(response.data);
+        setUser(response.data);
         setUserType(userTypeStored);
+        setIsLoggedIn(true);
         setCurrentPage('dashboard');
       } catch (err) {
         console.error('Auth check failed:', err);
         localStorage.removeItem('adminToken');
         localStorage.removeItem('userType');
         setUserType(null);
+        setIsLoggedIn(false);
         setCurrentPage('login');
       }
     }
@@ -69,28 +79,26 @@ function App() {
         ? '/auth/login-dashboard'
         : '/auth/login-artist';
 
-      // Login request (no token needed yet)
       const loginResponse = await api.post(endpoint, {
         email,
         password,
       });
 
       if (loginResponse.data.token) {
-        // Save token to localStorage
         localStorage.setItem('adminToken', loginResponse.data.token);
         localStorage.setItem('userType', type);
 
-        // Now make the dashboard request with the token
         const dashboardEndpoint = type === 'admin'
           ? '/admin/dashboard'
           : '/artist/dashboard';
 
         const dashboardResponse = await api.get(dashboardEndpoint);
 
-        setDashboard(dashboardResponse.data);
+        setUser(dashboardResponse.data);
         setEmail('');
         setPassword('');
         setUserType(type);
+        setIsLoggedIn(true);
         setCurrentPage('dashboard');
       }
     } catch (err) {
@@ -107,8 +115,8 @@ function App() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('userType');
     setUserType(null);
+    setIsLoggedIn(false);
     setCurrentPage('login');
-    setDashboard(null);
     setUser(null);
     setEmail('');
     setPassword('');
@@ -119,52 +127,18 @@ function App() {
     return (
       <div style={styles.loginContainer}>
         <div style={styles.loginWrapper}>
-          <h1 style={styles.mainTitle}>EchoVault</h1>
-          
           <div style={styles.loginGrid}>
-            {/* Admin Login */}
-            <div style={styles.loginBox}>
-              <h2 style={styles.title}>Admin Dashboard</h2>
-              <p style={styles.subtitle}>Platform Management</p>
-              
-              <form onSubmit={(e) => handleLogin(e, 'admin')} style={styles.form}>
-                {error && <div style={styles.error}>{error}</div>}
-                
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={styles.input}
-                  required
-                />
-                
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={styles.input}
-                  required
-                />
-                
-                <button type="submit" style={styles.adminButton} disabled={loading}>
-                  {loading ? 'Logging in...' : 'Admin Control'}
-                </button>
-              </form>
-            </div>
-
             {/* Artist Login */}
             <div style={styles.loginBox}>
-              <h2 style={styles.title}>Artist Dashboard</h2>
-              <p style={styles.subtitle}>Manage Your Music</p>
+              <p style={styles.loginLabel}>ECHOVAULT ARTIST</p>
+              <h2 style={styles.loginTitle}>ARTIST PORTAL</h2>
               
               <form onSubmit={(e) => handleLogin(e, 'artist')} style={styles.form}>
                 {error && <div style={styles.error}>{error}</div>}
                 
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder="artist@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={styles.input}
@@ -173,7 +147,7 @@ function App() {
                 
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={styles.input}
@@ -181,9 +155,43 @@ function App() {
                 />
                 
                 <button type="submit" style={styles.artistButton} disabled={loading}>
-                  {loading ? 'Logging in...' : 'Artist Control'}
+                  {loading ? 'Logging in...' : 'ENTER ARTIST VIEW'}
                 </button>
               </form>
+              {error && <p style={styles.invalidCreds}>Invalid credentials</p>}
+            </div>
+
+            {/* Admin Login */}
+            <div style={styles.loginBox}>
+              <p style={styles.loginLabel}>ECHOVAULT ADMIN</p>
+              <h2 style={styles.loginTitle}>ADMIN CENTRAL</h2>
+              
+              <form onSubmit={(e) => handleLogin(e, 'admin')} style={styles.form}>
+                {error && <div style={styles.error}>{error}</div>}
+                
+                <input
+                  type="email"
+                  placeholder="akwera@echovaultz.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={styles.input}
+                  required
+                />
+                
+                <input
+                  type="password"
+                  placeholder="••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={styles.input}
+                  required
+                />
+                
+                <button type="submit" style={styles.adminButton} disabled={loading}>
+                  {loading ? 'Logging in...' : 'ACCESS ADMIN DASHBOARD'}
+                </button>
+              </form>
+              {error && <p style={styles.invalidCreds}>Invalid credentials</p>}
             </div>
           </div>
         </div>
@@ -191,166 +199,103 @@ function App() {
     );
   }
 
-  // Dashboard Page
-  if (currentPage === 'dashboard' && userType) {
+  // Dashboard Page with Sidebar
+  if (isLoggedIn && userType) {
+    const isAdmin = userType === 'admin';
+
+    const adminNavigation = [
+      { label: 'OVERVIEW', section: 'Dashboard', icon: '📊' },
+      { label: 'USER MANAGEMENT', items: [
+        { label: 'User Directory', page: 'userDirectory', icon: '👥' },
+        { label: 'Artist Verification', page: 'artistVerification', icon: '⭐' },
+        { label: 'Add Admin', page: 'addAdmin', icon: '➕' },
+      ]},
+      { label: 'CONTENT MANAGEMENT', items: [
+        { label: 'Music Management', page: 'musicManagement', icon: '🎵' },
+        { label: 'Video Management', page: 'videoManagement', icon: '🎬' },
+        { label: 'Shorts Management', page: 'shortsManagement', icon: '📹' },
+        { label: 'Ads Management', page: 'adsManagement', icon: '📢' },
+        { label: 'Slider Management', page: 'sliderManagement', icon: '🎠' },
+      ]},
+      { label: 'MANAGEMENT', items: [
+        { label: 'Artist Verification', page: 'artistVerification', icon: '✓' },
+        { label: 'Add Admin', page: 'addAdmin', icon: '🔐' },
+        { label: 'Payouts', page: 'payouts', icon: '💰' },
+      ]},
+    ];
+
     return (
       <div style={styles.dashboardContainer}>
-        <nav style={styles.navbar}>
-          <h1 style={styles.navTitle}>
-            EchoVault {userType === 'admin' ? 'Admin' : 'Artist'} Central
-          </h1>
-          <button onClick={handleLogout} style={styles.logoutBtn}>
-            Logout
-          </button>
-        </nav>
+        {/* Sidebar */}
+        <div style={{...styles.sidebar, width: sidebarOpen ? '250px' : '0'}}>
+          <div style={styles.sidebarHeader}>
+            <div style={styles.logo}>🔐</div>
+            <div style={styles.logoText}>
+              <div style={styles.logoTitle}>ADMIN</div>
+              <div style={styles.logoSubtitle}>CENTRAL</div>
+            </div>
+          </div>
 
-        <main style={styles.main}>
-          <h2 style={styles.heading}>
-            {userType === 'admin' ? 'Platform Overview' : 'Your Statistics'}
-          </h2>
-          
-          {dashboard && (
-            <div style={styles.metricsGrid}>
-              {userType === 'admin' ? (
+          {adminNavigation.map((section, idx) => (
+            <div key={idx}>
+              {section.items ? (
                 <>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Total Users</p>
-                    <p style={styles.metricValue}>{dashboard.userCount || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Active Artists</p>
-                    <p style={styles.metricValue}>{dashboard.artistCount || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Platform Revenue</p>
-                    <p style={styles.metricValue}>${(dashboard.revenue || 0).toFixed(2)}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Pending Payouts</p>
-                    <p style={styles.metricValue}>{dashboard.withdrawals?.length || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Total Tracks</p>
-                    <p style={styles.metricValue}>{dashboard.trackCount || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Total Streams</p>
-                    <p style={styles.metricValue}>{dashboard.totalStreams || 0}</p>
-                  </div>
+                  <div style={styles.sectionLabel}>{section.label}</div>
+                  {section.items.map((item) => (
+                    <button
+                      key={item.page}
+                      style={{...styles.navItem, backgroundColor: currentPage === item.page ? 'rgba(16, 185, 129, 0.2)' : 'transparent'}}
+                      onClick={() => setCurrentPage(item.page)}
+                    >
+                      <span style={styles.navIcon}>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
                 </>
               ) : (
                 <>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>My Tracks</p>
-                    <p style={styles.metricValue}>{dashboard.trackCount || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Total Streams</p>
-                    <p style={styles.metricValue}>{dashboard.totalStreams || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Total Revenue</p>
-                    <p style={styles.metricValue}>${(dashboard.totalRevenue || 0).toFixed(2)}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Followers</p>
-                    <p style={styles.metricValue}>{dashboard.followers || 0}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Pending Payout</p>
-                    <p style={styles.metricValue}>${(dashboard.pendingPayout || 0).toFixed(2)}</p>
-                  </div>
-                  <div style={styles.metricCard}>
-                    <p style={styles.metricLabel}>Account Status</p>
-                    <p style={styles.metricValue}>{dashboard.verified ? 'Verified' : 'Pending'}</p>
-                  </div>
+                  <div style={styles.sectionLabel}>{section.label}</div>
+                  <button
+                    style={{...styles.navItem, backgroundColor: currentPage === section.section ? 'rgba(16, 185, 129, 0.2)' : 'transparent'}}
+                    onClick={() => setCurrentPage(section.section)}
+                  >
+                    <span style={styles.navIcon}>{section.icon}</span>
+                    <span>{section.label}</span>
+                  </button>
                 </>
               )}
             </div>
-          )}
+          ))}
+        </div>
 
-          {!dashboard && (
-            <div style={styles.loading}>Loading dashboard...</div>
-          )}
-
-          <div style={styles.sectionsContainer}>
-            <h3 style={styles.sectionTitle}>
-              {userType === 'admin' ? 'Admin Sections' : 'Artist Sections'}
-            </h3>
-            
-            {userType === 'admin' ? (
-              <div style={styles.sectionsGrid}>
-                <div style={styles.section}>
-                  <h4>User Directory</h4>
-                  <p>Manage all users</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Artist Verification</h4>
-                  <p>Verify artist accounts</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Music Management</h4>
-                  <p>Manage platform music</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Video Management</h4>
-                  <p>Manage platform videos</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Gifts Management</h4>
-                  <p>Configure gift system</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Payouts</h4>
-                  <p>Manage artist payouts</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Reports</h4>
-                  <p>View platform reports</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Ads Management</h4>
-                  <p>Manage advertisements</p>
-                </div>
-              </div>
-            ) : (
-              <div style={styles.sectionsGrid}>
-                <div style={styles.section}>
-                  <h4>Upload Music</h4>
-                  <p>Add new tracks</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>My Music</h4>
-                  <p>Manage your tracks</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Upload Videos</h4>
-                  <p>Add new videos</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Upload Shorts</h4>
-                  <p>Create short videos</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Revenue</h4>
-                  <p>Track earnings</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Insights</h4>
-                  <p>View statistics</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Live Insights</h4>
-                  <p>Real-time analytics</p>
-                </div>
-                <div style={styles.section}>
-                  <h4>Profile</h4>
-                  <p>Manage your profile</p>
-                </div>
-              </div>
-            )}
+        {/* Main Content */}
+        <div style={styles.mainContent}>
+          {/* Top Bar */}
+          <div style={styles.topBar}>
+            <button style={styles.sidebarToggle} onClick={() => setSidebarOpen(!sidebarOpen)}>
+              ☰
+            </button>
+            <div style={styles.topBarRight}>
+              <span style={styles.userInfo}>Platform Revenue: $0</span>
+              <button onClick={handleLogout} style={styles.logoutBtn}>
+                Logout
+              </button>
+            </div>
           </div>
-        </main>
+
+          {/* Page Content */}
+          <div style={styles.pageContent}>
+            {currentPage === 'dashboard' && <Dashboard user={user} />}
+            {currentPage === 'userDirectory' && <UserDirectory />}
+            {currentPage === 'artistVerification' && <ArtistVerification />}
+            {currentPage === 'musicManagement' && <MusicManagement />}
+            {currentPage === 'videoManagement' && <VideoManagement />}
+            {currentPage === 'shortsManagement' && <ShortsManagement />}
+            {currentPage === 'adsManagement' && <AdsManagement />}
+            {currentPage === 'sliderManagement' && <SliderManagement />}
+            {currentPage === 'payouts' && <Payouts />}
+          </div>
+        </div>
       </div>
     );
   }
@@ -364,177 +309,198 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    padding: '20px',
+    background: 'linear-gradient(135deg, #f5f5f5 50%, #1a1a1a 50%)',
   },
   loginWrapper: {
     width: '100%',
   },
-  mainTitle: {
-    fontSize: '48px',
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: '60px',
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
   loginGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-    gap: '40px',
-    maxWidth: '900px',
-    margin: '0 auto',
+    gridTemplateColumns: '1fr 1fr',
+    height: '100vh',
   },
   loginBox: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: '40px',
   },
-  title: {
-    fontSize: '24px',
-    fontWeight: '900',
-    marginBottom: '8px',
+  loginLabel: {
+    fontSize: '12px',
+    color: '#888',
+    letterSpacing: '2px',
+    marginBottom: '10px',
+    textTransform: 'uppercase',
   },
-  subtitle: {
-    fontSize: '14px',
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: '24px',
+  loginTitle: {
+    fontSize: '32px',
+    fontWeight: 'bold',
+    marginBottom: '40px',
+    letterSpacing: '2px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
+    width: '100%',
+    maxWidth: '300px',
   },
   input: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '8px',
     padding: '12px 16px',
-    color: 'white',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
     fontSize: '14px',
     outline: 'none',
-    transition: 'all 0.3s ease',
-  },
-  adminButton: {
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
   },
   artistButton: {
-    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+    padding: '12px 16px',
+    background: '#7c3aed',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    padding: '12px 16px',
+    borderRadius: '4px',
     fontSize: '14px',
-    fontWeight: '600',
+    fontWeight: 'bold',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+  },
+  adminButton: {
+    padding: '12px 16px',
+    background: '#ef4444',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
   },
   error: {
     background: 'rgba(239, 68, 68, 0.2)',
-    border: '1px solid rgba(239, 68, 68, 0.5)',
-    color: '#fca5a5',
-    borderRadius: '8px',
-    padding: '12px',
-    fontSize: '14px',
+    color: '#ef4444',
+    padding: '10px',
+    borderRadius: '4px',
+    fontSize: '12px',
+  },
+  invalidCreds: {
+    color: '#ef4444',
+    fontSize: '12px',
+    marginTop: '10px',
+    textAlign: 'center',
   },
   dashboardContainer: {
+    display: 'flex',
     minHeight: '100vh',
+    background: '#0f0c29',
+    color: 'white',
+  },
+  sidebar: {
+    background: '#1a1540',
+    borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+    overflow: 'auto',
+    transition: 'width 0.3s ease',
+    paddingTop: '20px',
+  },
+  sidebarHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '0 16px 32px',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    marginBottom: '20px',
+  },
+  logo: {
+    fontSize: '28px',
+    background: '#10b981',
+    width: '40px',
+    height: '40px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    flex: 1,
+  },
+  logoTitle: {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  logoSubtitle: {
+    fontSize: '12px',
+    color: '#888',
+  },
+  sectionLabel: {
+    fontSize: '11px',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+    padding: '0 16px 12px',
+    marginTop: '20px',
+  },
+  navItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    width: '100%',
+    padding: '12px 16px',
+    border: 'none',
+    background: 'transparent',
+    color: 'white',
+    fontSize: '13px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.2s ease',
+  },
+  navIcon: {
+    fontSize: '16px',
+  },
+  mainContent: {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
   },
-  navbar: {
-    background: 'rgba(15, 12, 41, 0.8)',
-    backdropFilter: 'blur(10px)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-    padding: '20px 40px',
+  topBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: '20px 40px',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    background: 'rgba(15, 12, 41, 0.8)',
   },
-  navTitle: {
-    fontSize: '24px',
-    fontWeight: '900',
+  sidebarToggle: {
+    background: 'none',
+    border: 'none',
+    color: 'white',
+    fontSize: '20px',
+    cursor: 'pointer',
+  },
+  topBarRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+  },
+  userInfo: {
+    fontSize: '14px',
+    color: '#10b981',
+    fontWeight: 'bold',
   },
   logoutBtn: {
+    padding: '8px 16px',
     background: 'rgba(239, 68, 68, 0.2)',
     color: '#fca5a5',
     border: '1px solid rgba(239, 68, 68, 0.5)',
-    borderRadius: '8px',
-    padding: '8px 16px',
+    borderRadius: '4px',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-  main: {
-    flex: 1,
-    padding: '40px',
-  },
-  heading: {
-    fontSize: '28px',
-    fontWeight: '700',
-    marginBottom: '32px',
-  },
-  metricsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-    marginBottom: '60px',
-  },
-  metricCard: {
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(16, 185, 129, 0.2)',
-    borderRadius: '12px',
-    padding: '20px',
-    textAlign: 'center',
-  },
-  metricLabel: {
     fontSize: '12px',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: '10px',
   },
-  metricValue: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#10b981',
-  },
-  sectionsContainer: {
-    marginTop: '40px',
-  },
-  sectionTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    marginBottom: '24px',
-  },
-  sectionsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: '16px',
-  },
-  section: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '12px',
-    padding: '20px',
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-  loading: {
-    textAlign: 'center',
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: '16px',
-    marginTop: '20px',
+  pageContent: {
+    flex: 1,
+    overflow: 'auto',
+    padding: '40px',
   },
 };
 
